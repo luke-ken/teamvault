@@ -1,0 +1,6 @@
+# Claude working context — coupled to the private parent workspace, stays local
+CLAUDE.md
+
+# OS / IDE
+.DS_Store
+.idea/
