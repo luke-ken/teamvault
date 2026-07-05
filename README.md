@@ -2,7 +2,7 @@
 
 Multi-tenant file upload & sharing service. Users belong to companies; a file uploaded
 by one colleague is automatically visible to the whole company, with storage tiers for
-small vs. large companies. Planned extras: upload leaderboard + achievement badges.
+small vs. large companies.
 
 > **Status:** early setup — backend scaffolding is next. This repo is built in public;
 > the commit history *is* the build log. See [`PROGRESS.md`](PROGRESS.md) for the
