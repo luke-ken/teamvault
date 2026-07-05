@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: teamvault-backend
+  # No datasource URL here on purpose: locally, spring-boot-docker-compose starts the
+  # Postgres from compose.yaml and injects the connection; tests use Testcontainers.
+  # Real environments will provide SPRING_DATASOURCE_* via env vars.
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Flyway owns the schema; Hibernate only checks it matches
+    open-in-view: false
+  flyway:
+    enabled: true

@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: 'postgres:18'
+    environment:
+      - 'POSTGRES_DB=teamvault'
+      - 'POSTGRES_PASSWORD=dev'
+      - 'POSTGRES_USER=teamvault'
+    ports:
+      - '5432:5432'
