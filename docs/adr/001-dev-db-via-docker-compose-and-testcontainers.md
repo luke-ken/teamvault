@@ -6,13 +6,13 @@
 ## Context
 The app needs PostgreSQL locally (dev) and in tests, with as little manual setup and
 config drift as possible. The naive approach is a hand-run `docker run postgres` plus a
-hardcoded datasource URL in `application.yaml` — easy to explain, but easy to forget to
+hardcoded datasource URL in `application.yaml`: easy to explain, but easy to forget to
 start, and the credentials live in two places (compose/docker command *and* the yaml).
 
 ## Options considered
-1. **Manual `docker run` + hardcoded `spring.datasource.*`** — simplest mental model;
+1. **Manual `docker run` + hardcoded `spring.datasource.*`**: simplest mental model;
    but the container lifecycle is manual, and config drifts between the run command and yaml.
-2. **`spring-boot-docker-compose` (dev) + Testcontainers (tests)** — Spring starts/stops the
+2. **`spring-boot-docker-compose` (dev) + Testcontainers (tests)**: Spring starts/stops the
    `compose.yaml` Postgres on app start and injects the connection details; tests spin up a
    throwaway Postgres per run. Zero datasource config in yaml; one source of truth (`compose.yaml`).
    Cost: more "magic" to understand, and requires Docker running for both dev and tests.

@@ -4,7 +4,7 @@ Multi-tenant file upload & sharing service. Users belong to companies; a file up
 by one colleague is automatically visible to the whole company, with storage tiers for
 small vs. large companies.
 
-> **Status:** early setup — backend scaffolding is next. This repo is built in public;
+> **Status:** early setup; backend scaffolding is next. This repo is built in public;
 > the commit history *is* the build log. See [`PROGRESS.md`](PROGRESS.md) for the
 > session-by-session journal and [`docs/adr/`](docs/adr/) for architecture decisions.
 
@@ -18,4 +18,4 @@ small vs. large companies.
 
 ## Running it
 
-_Coming with the first backend milestone — the goal is a single `docker compose up`._
+_Coming with the first backend milestone. The goal is a single `docker compose up`._
