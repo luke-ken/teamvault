@@ -41,8 +41,11 @@ choice is expensive to reverse, so it is decided up front.
 **What is tenant-owned:** `file_metadata` (and every future table holding tenant data).
 `app_user` is deliberately **not** tenant-owned: a user may belong to several companies,
 so the user-to-company relation lives in a `membership` join table (`user_id` FK,
-`company_id` FK, `UNIQUE(user_id, company_id)`), and the caller's membership decides
-which tenant's data a request may touch.
+`company_id` FK, `UNIQUE(company_id, user_id)`), and the caller's membership decides
+which tenant's data a request may touch. The unique constraint leads with `company_id`
+so its backing index also serves "members of company X"; the reverse path, "companies
+of user Y", runs on every authenticated request and gets its own index on `user_id`
+(leftmost prefix rule: one composite index cannot serve both directions).
 
 **Enforcement rule:** every query on tenant-owned data is scoped by `company_id`, no
 exceptions. The guarantee lives in the service layer: the scope is derived from the
