@@ -10,3 +10,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 26MB
+
+teamvault:
+  storage:
+    dir: ./data/blobs  # local dev blob store; swap target is S3/MinIO (see README)
