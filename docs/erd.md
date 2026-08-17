@@ -5,12 +5,19 @@ Flyway migration (`backend/src/main/resources/db/migration/V1__init.sql`); this 
 is the readable map. Tenant-isolation reasoning lives in
 [ADR-003](adr/003-tenant-isolation-model.md).
 
+![TeamVault entity-relationship diagram](erd.svg)
+
+Crow's foot notation: double tick = exactly one, circle + crow's foot = zero or many.
+
+<details>
+<summary>Mermaid source (editable mirror of the diagram)</summary>
+
 ```mermaid
 erDiagram
     company ||--o{ membership : has
-    app_user ||--o{ membership : holds
     company ||--o{ file_metadata : owns
-    app_user ||--o{ file_metadata : uploads
+    membership }o--|| app_user : "belongs to"
+    file_metadata }o--|| app_user : "uploaded by"
 
     company {
         uuid id PK
@@ -43,6 +50,8 @@ erDiagram
         timestamptz created_at
     }
 ```
+
+</details>
 
 ## Constraints and indexes (the deliberate ones)
 
