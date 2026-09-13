@@ -34,13 +34,21 @@ without sticky sessions.
 
 ## Running it
 
-Requirements: JDK 21, Docker running.
+Requirements: JDK 21 and a running Docker daemon. The app and the tests are independent:
+neither needs the other to be running.
+
+### Run the app
 
 ```bash
 cd backend
-./mvnw spring-boot:run   # starts dev Postgres via docker compose automatically
-./mvnw test              # integration tests against a throwaway Postgres
+./mvnw spring-boot:run
 ```
+
+Spring Boot's Docker Compose support starts the dev Postgres from `compose.yaml` (port 5432)
+before the app boots and stops it again when the app exits. The command stays in the
+foreground, so use a second terminal for everything below.
+
+### Try it
 
 Dev seed (`V2__seed.sql`): two companies with disjoint members, password `devpass12`.
 
@@ -67,6 +75,17 @@ curl -u alice@acme.example:devpass12 \
 curl -u bob@globex.example:devpass12 localhost:8080/api/companies/$ACME/files
 # -> {"status":403,"error":"Forbidden","message":"Not a member of this company"}
 ```
+
+### Run the tests
+
+```bash
+cd backend
+./mvnw test
+```
+
+The integration tests never touch the dev database. Testcontainers starts a throwaway
+Postgres on a random port, Flyway migrates and seeds it, and the Ryuk sidecar removes
+all test containers once the JVM exits. Only Docker needs to be up for this, not the app.
 
 ## API
 
