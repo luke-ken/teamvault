@@ -22,6 +22,9 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
 
 ## Build order
 
+Status 2026-09-20: steps 1 to 6 done and committed (3 commits). Next: step 7b
+(`LoginRequest`), 8, 9.
+
 ### New (build stays green throughout)
 1. `pom.xml`: `spring-boot-starter-oauth2-resource-server` (brings Nimbus encoder/decoder).
 2. `auth/JwtProperties`: validated `@ConfigurationProperties("teamvault.jwt")`, `secret`
@@ -34,9 +37,10 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
    Lesson: a fail-fast config change drags its test config along in the same step.
 4. `auth/JwtConfig`: `JwtEncoder` + `JwtDecoder` beans (HS256, issuer validated).
    Separate from `SecurityConfig` so slice tests can import one without the other.
-5. `user/AuthenticatedUser`: `UserDetails` carrying the user UUID.
+5. `user/AuthenticatedUser`: `UserDetails` carrying the user UUID. Step 13 pulled in
+   here: safe, because HTTP Basic accepts any `UserDetails`.
 6. `auth/TokenService`: claims `sub` (UUID), `email`, `iat`, `exp`, `iss`; returns
-   token + expiresAt.
+   `TokenResponse` (record pulled in from step 7 so the service returns the API type).
 7. `auth/LoginRequest`, `auth/TokenResponse` records.
 8. `auth/AuthController`: `POST /api/auth/login`. Needs an `AuthenticationManager` bean
    (`ProviderManager` over `DaoAuthenticationProvider`) in `SecurityConfig`.

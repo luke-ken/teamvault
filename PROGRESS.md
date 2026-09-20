@@ -2,6 +2,18 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-09-20 – S1·S9–S10 (part) – ADR-004 finalised and committed (self-issued JWT via
+  Spring resource-server support, HS256, identity-only claims, 15-min TTL, no refresh
+  token; revisit triggers named). `docs/plans/jwt-swap-plan.md`: 20-step build order,
+  bottom-up in dependency order, written before the first line of code. Steps 1–6 built
+  in duo (user types, assistant reviews) and green: resource-server starter, validated
+  `JwtProperties` with fail-fast boot on a missing/short secret (verified: boot dies with
+  the env-var name in the message), `.env` import + `.env.example`, test profile with a
+  fixed secret, `JwtConfig` (encoder/decoder beans, HS256 pinned, issuer validated),
+  `AuthenticatedUser` record principal carrying the UUID, `TokenService`. 6/6 tests
+  still green; HTTP Basic still active. Three commits. **Next:** steps 7–9 (login
+  endpoint + `AuthenticationManager` bean + JSON 401 entry point), then the swap
+  (steps 12–18), README, ADR status to accepted.
 - 2026-08-17 – S1·S3–S8 – The big push. ADR-003 (tenant isolation: shared schema +
   company_id, service-layer enforcement, RLS named as hardening path), ERD hand-sketched
   then captured in `docs/erd.md` with per-index justifications, `V1__init.sql` (4 tables,
