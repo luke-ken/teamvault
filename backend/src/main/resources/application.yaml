@@ -1,6 +1,10 @@
 spring:
   application:
     name: teamvault-backend
+  config:
+    # Local dev convenience: a gitignored .env next to the pom (see .env.example).
+    # Optional, so CI and production can rely on plain environment variables.
+    import: optional:file:.env[.properties]
   # No datasource URL here on purpose: locally, spring-boot-docker-compose starts the
   # Postgres from compose.yaml and injects the connection; tests use Testcontainers.
   # Real environments will provide SPRING_DATASOURCE_* via env vars.
@@ -18,3 +22,9 @@ spring:
 teamvault:
   storage:
     dir: ./data/blobs  # local dev blob store; swap target is S3/MinIO (see README)
+  jwt:
+    # ADR-004: HS256 secret from the environment, never from code. The empty default
+    # makes a missing TEAMVAULT_JWT_SECRET fail validation at boot instead of silently
+    # signing with a known key.
+    secret: ${TEAMVAULT_JWT_SECRET:}
+    ttl: 15m

@@ -1,0 +1,5 @@
+# Test profile: a fixed, test-only signing secret so ./mvnw test never depends on the
+# developer's shell. Not a real secret; the tests would be meaningless with a leaked one.
+teamvault:
+  jwt:
+    secret: test-only-secret-that-is-at-least-32-characters-long

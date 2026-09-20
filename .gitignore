@@ -4,3 +4,6 @@ CLAUDE.md
 # OS / IDE
 .DS_Store
 .idea/
+
+# Local secrets (see .env.example)
+.env
