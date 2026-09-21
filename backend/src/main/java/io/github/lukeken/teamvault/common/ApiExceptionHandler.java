@@ -4,10 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -43,6 +47,22 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	ResponseEntity<ApiError> tooLarge(MaxUploadSizeExceededException e) {
 		return error(HttpStatus.PAYLOAD_TOO_LARGE, "Uploaded file exceeds the size limit");
+	}
+
+	// Login failures do reach the advice: the controller calls the manager itself.
+	// One message for unknown email and wrong password, no account enumeration.
+	@ExceptionHandler(AuthenticationException.class)
+	ResponseEntity<ApiError> unauthorized(AuthenticationException e) {
+		return error(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	ResponseEntity<ApiError> invalidBody(MethodArgumentNotValidException e) {
+		String message = e.getBindingResult().getFieldErrors().stream()
+				.map(f -> f.getField() + " " + f.getDefaultMessage())
+				.sorted()
+				.collect(Collectors.joining(", "));
+		return error(HttpStatus.BAD_REQUEST, message);
 	}
 
 	// Catch-all: log the details server-side, never leak internals to the client (OWASP).
