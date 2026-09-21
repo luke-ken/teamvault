@@ -22,8 +22,9 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
 
 ## Build order
 
-Status 2026-09-20: steps 1 to 6 done and committed (3 commits). Next: step 7b
-(`LoginRequest`), 8, 9.
+Status 2026-09-21: steps 1 to 9 done, plus 16 pulled forward (4 commits). Next: step 12,
+the swap; step 10 (`AuthApiIntegrationTest`) moves behind it, because the login endpoint
+is unreachable while `anyRequest().authenticated()` sits in front of it.
 
 ### New (build stays green throughout)
 1. `pom.xml`: `spring-boot-starter-oauth2-resource-server` (brings Nimbus encoder/decoder).
@@ -43,9 +44,12 @@ Status 2026-09-20: steps 1 to 6 done and committed (3 commits). Next: step 7b
    `TokenResponse` (record pulled in from step 7 so the service returns the API type).
 7. `auth/LoginRequest`, `auth/TokenResponse` records.
 8. `auth/AuthController`: `POST /api/auth/login`. Needs an `AuthenticationManager` bean
-   (`ProviderManager` over `DaoAuthenticationProvider`) in `SecurityConfig`.
+   (`ProviderManager` over `DaoAuthenticationProvider`). **Built in `auth/AuthenticationConfig`,
+   not `SecurityConfig`:** the ping slice test imports `SecurityConfig`, and a bean there that
+   needs a `UserDetailsService` would break that slice. Same split as `JwtConfig`.
 9. `auth/JsonAuthenticationEntryPoint`: 401 as the existing `ApiError` JSON plus
    `WWW-Authenticate: Bearer`. Filter-chain failures never reach the controller advice.
+   Boot 4 note: the injected mapper is Jackson 3, `tools.jackson.databind.ObjectMapper`.
 10. `AuthApiIntegrationTest`: login 200 · wrong password 401 · unknown email 401 (same
     message, no enumeration) · no token 401 + header · garbage token 401 JSON ·
     login then bearer then file list 200.
@@ -59,7 +63,9 @@ Status 2026-09-20: steps 1 to 6 done and committed (3 commits). Next: step 7b
 15. `FileService`: `callerEmail` becomes `callerId`; `requireMembership` queries
     membership directly; `AppUserRepository` field goes. One query less per request.
 16. `ApiExceptionHandler`: `AuthenticationException` to 401 (login failures do reach
-    the advice).
+    the advice). **Pulled forward to step 8**, together with a 400 handler for `@Valid`
+    body failures (`MethodArgumentNotValidException`), which the catch-all would have
+    turned into a 500. Both additive, build stayed green.
 17. `FileApiIntegrationTest`: `httpBasic(...)` becomes a bearer helper (login once per
     user, cache the token). Assertions unchanged.
 18. `PingControllerTest`: `@MockitoBean JwtDecoder`.
@@ -74,3 +80,10 @@ One picture, two lanes:
   `JwtDecoder` (signature, exp, iss) → `Jwt` principal → controller → service
   (`membership` lookup = ADR-003) → response. 401 branch at the decoder (entry point),
   403 branch at the service.
+
+## Formatting (decided 2026-09-21)
+No formatter yet; the repo mixes tabs (Initializr files) and spaces (`auth` package), and
+line length is unconstrained. Decision: add Spotless with palantir-java-format (4-space
+indent, 120 columns) as its own chore commit **after** this feature lands, never inside a
+feature commit, because a repo-wide reformat would bury the feature diff. Until then:
+IDE reformat before commit.
