@@ -2,6 +2,18 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-09-29 – S1·S9–S10 (part) – The swap landed, steps 12 to 18 in one feature commit,
+  ADR-004 accepted. `SecurityConfig`: `httpBasic` out, `oauth2ResourceServer(jwt)` in,
+  `/api/auth/**` public, `JsonAuthenticationEntryPoint` wired for both 401 paths (no token
+  via `exceptionHandling`, bad token via the resource server). `FileController` takes
+  `@AuthenticationPrincipal Jwt`, caller id from `sub`; `FileService` checks membership
+  by id directly, `AppUserRepository` dependency and one query per request gone. Step 13
+  was already done (pulled into step 5). Tests: bearer helper does a real login per user
+  (cached static), assertions byte-identical; ping slice imports the entry point and mocks
+  `JwtDecoder`. 6/6 green. Lesson: `@WebMvcTest` does not scan `@Component`, so a new
+  dependency in `SecurityConfig` drags its bean into every slice that imports it.
+  **Next:** step 19 (README: intro, bearer curl flow, API table, JWT out of "not built"),
+  step 10 (`AuthApiIntegrationTest`), then Spotless as a chore commit.
 - 2026-09-21 – S1·S9–S10 (part) – JWT steps 7 to 9 built in duo, plus step 16 pulled
   forward: `LoginRequest` (validated, password never in `toString`), `AuthenticationConfig`
   (`ProviderManager` over `DaoAuthenticationProvider`, kept out of `SecurityConfig` so the

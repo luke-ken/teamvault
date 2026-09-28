@@ -22,9 +22,9 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
 
 ## Build order
 
-Status 2026-09-21: steps 1 to 9 done, plus 16 pulled forward (4 commits). Next: step 12,
-the swap; step 10 (`AuthApiIntegrationTest`) moves behind it, because the login endpoint
-is unreachable while `anyRequest().authenticated()` sits in front of it.
+Status 2026-09-29: steps 1 to 9 and 12 to 18 done, 20 pulled into the feature commit
+(5 commits). Step 13 was already covered by step 5. Open: 19 (README), 10
+(`AuthApiIntegrationTest`), then the Spotless chore.
 
 ### New (build stays green throughout)
 1. `pom.xml`: `spring-boot-starter-oauth2-resource-server` (brings Nimbus encoder/decoder).
