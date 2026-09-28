@@ -1,7 +1,7 @@
 # ADR-004: Self-issued JWT as the authentication mechanism
 
 - **Date:** 2026-09-20
-- **Status:** proposed
+- **Status:** accepted (2026-09-29)
 
 ## Context
 ADR-002 locked every endpoint down but left "authenticated how?" open. The interim answer
