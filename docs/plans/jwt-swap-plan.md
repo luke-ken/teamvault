@@ -22,8 +22,8 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
 
 ## Build order
 
-Status 2026-09-29: steps 1 to 9 and 12 to 18 done, 20 pulled into the feature commit
-(5 commits). Step 13 was already covered by step 5. Open: 19 (README), 10
+Status 2026-09-29 (evening): steps 1 to 9, 12 to 18 and 19 (README) done, 20 pulled into
+the feature commit (6 commits). Step 13 was already covered by step 5. Open: 10
 (`AuthApiIntegrationTest`), then the Spotless chore.
 
 ### New (build stays green throughout)

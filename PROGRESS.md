@@ -2,6 +2,14 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-09-29 (2) – S1·S9–S10 (part) – Step 19: README on the JWT state. Status line, design
+  decision 3 (token = identity only, authorization stays the per-request membership lookup),
+  stack line, a "configure the signing secret" step (fail-fast boot, `.env.example`, openssl),
+  the curl walkthrough on bearer tokens incl. the 401 without a token and the same-body,
+  same-timing login failure, API table with an auth column, 401 filter-chain vs controller
+  error paths, "deliberately not built" now names refresh tokens and revocation with the
+  ADR-004 revisit triggers. Plan status updated. **Next:** step 10 (`AuthApiIntegrationTest`),
+  Spotless chore.
 - 2026-09-29 – S1·S9–S10 (part) – The swap landed, steps 12 to 18 in one feature commit,
   ADR-004 accepted. `SecurityConfig`: `httpBasic` out, `oauth2ResourceServer(jwt)` in,
   `/api/auth/**` public, `JsonAuthenticationEntryPoint` wired for both 401 paths (no token
