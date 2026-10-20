@@ -1,18 +1,13 @@
 package io.github.lukeken.teamvault.auth;
 
 import com.jayway.jsonpath.JsonPath;
-import io.github.lukeken.teamvault.TestcontainersConfiguration;
+import io.github.lukeken.teamvault.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -23,17 +18,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-public class AuthApiIntegrationTest {
+public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 
-	static final String ACME = "11111111-1111-1111-1111-111111111111";
-	static final String PASSWORD = "correct-horse-battery";
-
-	@Autowired
-	MockMvc mvc;
+	static final String NEW_PASSWORD = "correct-horse-battery";
 
 	// The production decoder, so a wrong key or issuer fails here and not only live.
 	@Autowired
@@ -43,7 +30,7 @@ public class AuthApiIntegrationTest {
 	void register_thenLogin_tokenCarriesUserIdAsSubject() throws Exception {
 		String registered = mvc
 			.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-				.content(register("Carol@Example.com", PASSWORD, "Carol")))
+				.content(registerBody("Carol@Example.com", NEW_PASSWORD, "Carol")))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.email", is("carol@example.com")))
 			.andExpect(jsonPath("$.displayName", is("Carol")))
@@ -56,7 +43,7 @@ public class AuthApiIntegrationTest {
 
 		String loggedIn = mvc
 			.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-				.content(login("carol@example.com", PASSWORD)))
+				.content(loginBody("carol@example.com", NEW_PASSWORD)))
 			.andExpect(status().isOk())
 			.andReturn()
 			.getResponse()
@@ -72,9 +59,9 @@ public class AuthApiIntegrationTest {
 	@Test
 	void register_sameEmailTwice_409_regardlessOfCase() throws Exception {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content(register("dave@example.com", PASSWORD, "Dave"))).andExpect(status().isCreated());
+			.content(registerBody("dave@example.com", NEW_PASSWORD, "Dave"))).andExpect(status().isCreated());
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content(register("DAVE@example.com", PASSWORD, "Dave again")))
+			.content(registerBody("DAVE@example.com", NEW_PASSWORD, "Dave again")))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.message", is("Email already registered")));
 	}
@@ -82,7 +69,7 @@ public class AuthApiIntegrationTest {
 	@Test
 	void register_shortPassword_400_withFieldName() throws Exception {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content(register("erin@example.com", "short", "Erin")))
+			.content(registerBody("erin@example.com", "short", "Erin")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message", startsWith("password ")));
 	}
@@ -90,18 +77,18 @@ public class AuthApiIntegrationTest {
 	@Test
 	void login_wrongPasswordAndUnknownEmail_sameBody() throws Exception {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-			.content(register("frank@example.com", PASSWORD, "Frank"))).andExpect(status().isCreated());
+			.content(registerBody("frank@example.com", NEW_PASSWORD, "Frank"))).andExpect(status().isCreated());
 
 		String wrongPassword = mvc
 			.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-				.content(login("frank@example.com", "not-the-password")))
+				.content(loginBody("frank@example.com", "not-the-password")))
 			.andExpect(status().isUnauthorized())
 			.andReturn()
 			.getResponse()
 			.getContentAsString();
 		String unknownEmail = mvc
 			.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-				.content(login("nobody@example.com", PASSWORD)))
+				.content(loginBody("nobody@example.com", NEW_PASSWORD)))
 			.andExpect(status().isUnauthorized())
 			.andReturn()
 			.getResponse()
@@ -131,12 +118,12 @@ public class AuthApiIntegrationTest {
 			.andExpect(jsonPath("$.status", is("UP")));
 	}
 
-	private static String register(String email, String password, String displayName) {
+	private static String registerBody(String email, String password, String displayName) {
 		return "{\"email\":\"" + email + "\",\"password\":\"" + password + "\",\"displayName\":\"" + displayName
 				+ "\"}";
 	}
 
-	private static String login(String email, String password) {
+	private static String loginBody(String email, String password) {
 		return "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}";
 	}
 

@@ -1,87 +1,18 @@
 package io.github.lukeken.teamvault.file;
 
 import com.jayway.jsonpath.JsonPath;
-import io.github.lukeken.teamvault.TestcontainersConfiguration;
+import io.github.lukeken.teamvault.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class FileApiIntegrationTest {
-
-	// Fixed ids from V2__seed.sql: alice is a member of Acme only, bob of Globex only.
-	static final String ACME = "11111111-1111-1111-1111-111111111111";
-	static final String GLOBEX = "22222222-2222-2222-2222-222222222222";
-	static final String ALICE = "alice@acme.example";
-	static final String BOB = "bob@globex.example";
-	static final String PASSWORD = "devpass12";
-
-	@TempDir
-	static Path storageDir;
-
-	@DynamicPropertySource
-	static void storageProps(DynamicPropertyRegistry registry) {
-		registry.add("teamvault.storage.dir", () -> storageDir.toString());
-	}
-
-	@Autowired
-	MockMvc mvc;
-
-	// One real login per user per test run (ADR-004): the token goes through the same
-	// decoder as production traffic, so a broken key or issuer fails these tests too.
-	// Static on purpose: JUnit creates a new instance per test method, the token is
-	// valid for 15 minutes, and the test profile pins the secret.
-	static final Map<String, String> TOKENS = new HashMap<>();
-
-	private RequestPostProcessor bearer(String email) throws Exception {
-		String token = TOKENS.get(email);
-		if (token == null) {
-			token = login(email);
-			TOKENS.put(email, token);
-		}
-		String header = "Bearer " + token;
-		return request -> {
-			request.addHeader(HttpHeaders.AUTHORIZATION, header);
-			return request;
-		};
-	}
-
-	private String login(String email) throws Exception {
-		String body = mvc
-			.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}"))
-			.andExpect(status().isOk())
-			.andReturn()
-			.getResponse()
-			.getContentAsString();
-		return JsonPath.read(body, "$.token");
-	}
+class FileApiIntegrationTest extends AbstractIntegrationTest {
 
 	@Test
 	void uploadListDownload_roundTrip_withinOwnCompany() throws Exception {
