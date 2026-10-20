@@ -25,6 +25,9 @@ public class SecurityConfig {
 						.requestMatchers("/api/ping").permitAll()
 						// Login is where you request a token, so it cannot demand one.
 						.requestMatchers("/api/auth/**").permitAll()
+						// Health is public by design: a probe cannot carry a token. Details
+						// are hidden in application.yaml, so nothing leaks beyond UP or DOWN.
+						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.anyRequest().authenticated())
 				// ADR-004: bearer tokens verified by the JwtDecoder bean (JwtConfig).
 				// The entry point here answers "token present but rejected".

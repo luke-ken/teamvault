@@ -114,6 +114,18 @@ public class AuthApiIntegrationTest {
                 .andExpect(jsonPath("$.status", is(401)));
     }
 
+    @Test
+    void health_isPublic_andReportsOnlyStatus() throws Exception {
+        mvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("UP")))
+                // show-details: never, so no component list reaches the outside.
+                .andExpect(jsonPath("$.components").doesNotExist());
+        mvc.perform(get("/actuator/health/readiness"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("UP")));
+    }
+
     private static String register(String email, String password, String displayName) {
         return "{\"email\":\"" + email + "\",\"password\":\"" + password
                 + "\",\"displayName\":\"" + displayName + "\"}";

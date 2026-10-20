@@ -28,3 +28,20 @@ teamvault:
     # signing with a known key.
     secret: ${TEAMVAULT_JWT_SECRET:}
     ttl: 15m
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Health only. env, beans and heapdump stay off: that is where the Actuator
+        # advisories come from, and the default exposure is health for a reason.
+        include: health
+
+  endpoint:
+    health:
+      # /actuator/health/liveness and /readiness: the probe pair Kubernetes expects,
+      # the same pair the compose healthcheck will use.
+      probes:
+        enabled: true
+      # Outsiders see UP or DOWN, never which component failed.
+      show-details: never
