@@ -2,6 +2,26 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-20 – S1·S10 + readiness – Six commits. Registration (`AuthService.register`: exists
+  check for the readable 409, `uq_app_user_email` as the race backstop, now mapped from
+  `DataIntegrityViolationException` to 409 in the advice; email stored lower-cased and looked
+  up lower-cased, so the unique constraint is effectively case-insensitive), `RegisterRequest`
+  (password 8 to 72, the bcrypt input limit), `UserResponse` without the hash, login moved
+  from the controller into the service. Plan step 10 done: `AuthApiIntegrationTest`, six
+  cases (register then login with the token decoded by the production decoder, duplicate
+  email 409 across letter case, short password 400 naming the field, wrong password and
+  unknown email byte-identical 401, garbage bearer 401 as JSON with the challenge header,
+  health public and detail-free). Actuator health with liveness and readiness probes,
+  `show-details: never`, exposure health only, verified live (`/actuator/env` is 404).
+  Dependabot for Maven, weekly, grouped; the github-actions entry failed its first run with
+  "no workflow files" and was removed until CI exists. Formatter chore: Spring Java Format
+  at the validate phase, repo-wide apply in one commit, not Spotless (google-java-format
+  lineage does not run on JDK 26). New `docs/production-readiness.md`: every production
+  item as built, sprint N or named, with the one-line reason; principle: multi-instance safe
+  by construction now, infrastructure where a sprint pays for it, Kubernetes named only.
+  12/12 green. **Next:** company create with caller as ADMIN, member add as the first role
+  check, then README flow and Sprint 1 close. Shared integration base class when the third
+  integration test arrives (each test class boots its own context today).
 - 2026-09-29 (2) – S1·S9–S10 (part) – Step 19: README on the JWT state. Status line, design
   decision 3 (token = identity only, authorization stays the per-request membership lookup),
   stack line, a "configure the signing secret" step (fail-fast boot, `.env.example`, openssl),

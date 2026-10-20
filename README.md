@@ -5,8 +5,9 @@ by one colleague is automatically visible to the whole company, and never to any
 outside it. Storage tiers for small vs. large companies.
 
 > **Status:** the backend core is running: tenant-isolated file upload/list/download on a
-> hand-designed PostgreSQL schema, bearer-token auth with self-issued JWTs, integration-tested
-> against a real Postgres (Testcontainers). This repo is built in public; the commit history *is* the
+> hand-designed PostgreSQL schema, registration and bearer-token auth with self-issued JWTs,
+> a health endpoint with readiness probes, integration-tested against a real Postgres
+> (Testcontainers), formatter enforced by the build. This repo is built in public; the commit history *is* the
 > build log. See [`PROGRESS.md`](PROGRESS.md) for the journal and
 > [`docs/adr/`](docs/adr/) for architecture decisions.
 
@@ -34,7 +35,10 @@ without sticky sessions.
   self-issued HS256 JWT), Spring Data JPA, Flyway, PostgreSQL, local-FS blob store behind a
   single storage class (S3/MinIO is the designed swap)
 - **Testing:** JUnit 5, MockMvc, Testcontainers (real Postgres per test run)
-- **Ops:** Docker Compose (dev DB starts automatically with the app)
+- **Ops:** Docker Compose (dev DB starts automatically with the app), Spring Boot Actuator
+  (health only, probes on), Spring Java Format at the Maven validate phase, Dependabot
+- **Production readiness:** what is built, what is planned per sprint and what is named
+  only: [`docs/production-readiness.md`](docs/production-readiness.md)
 - **Planned:** React + TypeScript frontend, Redis, GitHub Actions CI
 
 ## Running it
@@ -75,11 +79,18 @@ Dev seed (`V2__seed.sql`): two companies with disjoint members, password `devpas
 | `alice@acme.example` | Acme GmbH (`11111111-…-111111111111`) | ADMIN |
 | `bob@globex.example` | Globex AG (`22222222-…-222222222222`) | MEMBER |
 
-Every request except login and ping needs `Authorization: Bearer <token>`. Log in once,
-keep the token in a shell variable (`jq` extracts it; any JSON tool works):
+Every request except register, login, ping and health needs `Authorization: Bearer <token>`.
+Log in once, keep the token in a shell variable (`jq` extracts it; any JSON tool works):
 
 ```bash
 ACME=11111111-1111-1111-1111-111111111111
+
+# register a new user (201, no token: tokens come from login only)
+curl -s -X POST localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"carol@example.com","password":"correct-horse-battery","displayName":"Carol"}'
+# -> {"id":"...","email":"carol@example.com","displayName":"Carol"}
+# same email again, in any letter case: 409 Conflict
 
 # exchange credentials for a token, valid 15 minutes
 TOKEN=$(curl -s -X POST localhost:8080/api/auth/login \
@@ -112,7 +123,16 @@ curl -H "Authorization: Bearer $BOB" localhost:8080/api/companies/$ACME/files
 
 A wrong password and an unknown email produce the same 401 body and take the same time
 (the provider runs a dummy bcrypt check for unknown users), so login leaks nothing about
-which emails exist.
+which emails exist. Registration does say "already registered": that is the usual trade,
+sign-up needs the feedback, login must not give it.
+
+Health is public and detail-free, the shape a readiness probe needs:
+
+```bash
+curl -s localhost:8080/actuator/health            # -> {"status":"UP"}, nothing more
+curl -s localhost:8080/actuator/health/readiness  # the probe a platform would poll
+curl -s -o /dev/null -w '%{http_code}' localhost:8080/actuator/env   # 404: not exposed
+```
 
 ### Run the tests
 
@@ -129,7 +149,9 @@ all test containers once the JVM exits. Only Docker needs to be up for this, not
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/ping` | public | health check |
+| GET | `/api/ping` | public | smoke check |
+| GET | `/actuator/health`, `/actuator/health/{liveness,readiness}` | public | UP or DOWN, no component details |
+| POST | `/api/auth/register` | public | `{email, password, displayName}` in, `{id, email, displayName}` out, 409 on a known email |
 | POST | `/api/auth/login` | public | `{email, password}` in, `{token, expiresAt}` out |
 | POST | `/api/companies/{companyId}/files` | bearer | multipart upload (member only) |
 | GET | `/api/companies/{companyId}/files` | bearer | list company files, newest first |
@@ -138,7 +160,8 @@ all test containers once the JVM exits. Only Docker needs to be up for this, not
 
 Errors are clean JSON (`{status, error, message}`), never stack traces, on both paths a
 request can fail: in the filter chain (401, missing or invalid token, written by a custom
-entry point) and in the controllers (400 validation, 401 bad credentials, 403, 404).
+entry point) and in the controllers (400 validation, 401 bad credentials, 403, 404, 409
+including the unique-constraint race behind the exists check).
 Cross-tenant requests fail with 403 (not a member) or 404 (foreign file id under your
 company), covered by `FileApiIntegrationTest.crossTenantAccess_isImpossible`.
 
@@ -156,5 +179,8 @@ Knowing what NOT to build at this scale is part of the design:
   the server stateless; the client logs in again. The triggers that would change this
   (a second service verifying tokens, an external identity provider) are written down in
   [ADR-004](docs/adr/004-self-issued-jwt-auth.md).
-- **Roles beyond membership, user/company CRUD endpoints**: next on the roadmap; the
+- **Roles beyond membership, company CRUD endpoints**: next on the roadmap; the
   schema and auth foundation for them are already in place.
+- **Everything on the production ladder marked planned or named**: rate limiting, Redis,
+  object store, CI, metrics. Each with its sprint or its reason in
+  [`docs/production-readiness.md`](docs/production-readiness.md).

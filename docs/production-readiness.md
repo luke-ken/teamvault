@@ -30,7 +30,7 @@ cheap to run, not what makes them possible.
 | Configuration from the environment only | built | `.env` is a local convenience, optional on purpose |
 | Fail-fast boot on a missing or short signing secret | built | `JwtProperties`, verified: boot dies naming the variable |
 | No demo secret default in any compose file | built (rule) | Reproducibility is one `openssl` line in the README, not a known key in the repo |
-| Health endpoint with liveness and readiness probes | sprint 1 | Actuator, health only, details hidden from the outside |
+| Health endpoint with liveness and readiness probes | built | Actuator, health only, details hidden from the outside, verified: `env` is 404 |
 | Graceful shutdown | built | Spring Boot default since 3.4: in-flight requests finish before the process exits |
 | Separate management port, not published | sprint 4 | Together with metrics |
 
@@ -43,8 +43,8 @@ cheap to run, not what makes them possible.
 | Passwords hashed with bcrypt | built | |
 | Same 401 body and timing for unknown email and wrong password | built | No account enumeration through login |
 | Clean JSON errors, no stack traces | built | OWASP; catch-all logs server-side |
-| Registration input rules, validation errors as 400 with field list | sprint 1 | |
-| Dependency update automation | sprint 1 | Dependabot for Maven and GitHub Actions |
+| Registration input rules, validation errors as 400 with field list | built | Password 8 to 72 (bcrypt limit), email lower-cased on write and lookup |
+| Dependency update automation | built | Dependabot for Maven, weekly, grouped; the github-actions entry joins with the first workflow in Sprint 3 |
 | Access token in memory, refresh token rotation in an httpOnly cookie | sprint 3 | ADR-004 revisit trigger 1: a 15-minute token is unusable behind a UI without renewal |
 | Swagger UI off outside the dev profile | sprint 2 | The contract is public, the UI is a dev tool |
 | Security headers and TLS termination at the proxy | sprint 3 | nginx in front; TLS at the ingress, never in the container |
@@ -60,7 +60,7 @@ cheap to run, not what makes them possible.
 |---|---|---|
 | Schema owned by Flyway, Hibernate validates only | built | ADR-001 |
 | Tenant-scoped unique constraints and composite indexes | built | `docs/erd.md`, one justification per index |
-| Unique constraint as the race backstop, mapped to 409 | sprint 1 | The exists check gives the readable error, the constraint wins the race |
+| Unique constraint as the race backstop, mapped to 409 | built | The exists check gives the readable error, the constraint wins the race |
 | Blob store behind one interface | built | `FileStorage`, local file system |
 | S3-compatible object store | sprint 3 | The two-instance blocker |
 | Keyset pagination on file lists | sprint 4 | Offset paging is fine until a company has thousands of files |
@@ -91,7 +91,7 @@ cheap to run, not what makes them possible.
 
 | Item | Status | Note |
 |---|---|---|
-| Health reflects the database | sprint 1 | Actuator does this without code |
+| Health reflects the database | built | Actuator does this without code |
 | Structured JSON logs with request id | sprint 4 | |
 | Metrics for Prometheus on the management port | sprint 4 | Latency per endpoint, JVM, connection pool |
 | Activity feed as the audit trail per company | sprint 4 | Event-driven, the product feature that doubles as compliance |
@@ -104,7 +104,7 @@ cheap to run, not what makes them possible.
 | Compose stack with one command | sprint 3 | Secret exported first, never defaulted |
 | CI: lint, test with Testcontainers, build images | sprint 3 | GitHub Actions |
 | Deployment with a public URL and TLS | sprint 3 | |
-| Formatter enforced by the build | sprint 1 | Spring Java Format on the backend; Prettier and a linter on the frontend from its first commit |
+| Formatter enforced by the build | built (backend) | Spring Java Format at the validate phase; Prettier and a linter on the frontend from its first commit in Sprint 3 |
 
 ## Scale
 

@@ -22,9 +22,9 @@ Decision in `../adr/004-self-issued-jwt-auth.md`; this file is the build order.
 
 ## Build order
 
-Status 2026-09-29 (evening): steps 1 to 9, 12 to 18 and 19 (README) done, 20 pulled into
-the feature commit (6 commits). Step 13 was already covered by step 5. Open: 10
-(`AuthApiIntegrationTest`), then the Spotless chore.
+Status 2026-10-20: all steps done. Step 10 (`AuthApiIntegrationTest`) landed with the
+registration feature, the formatter chore landed as Spring Java Format (see below). Step 13
+was already covered by step 5. The plan is closed.
 
 ### New (build stays green throughout)
 1. `pom.xml`: `spring-boot-starter-oauth2-resource-server` (brings Nimbus encoder/decoder).
