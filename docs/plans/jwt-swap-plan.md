@@ -87,3 +87,8 @@ line length is unconstrained. Decision: add Spotless with palantir-java-format (
 indent, 120 columns) as its own chore commit **after** this feature lands, never inside a
 feature commit, because a repo-wide reformat would bury the feature diff. Until then:
 IDE reformat before commit.
+
+Revised 2026-10-20: the tool is `spring-javaformat-maven-plugin` (tabs, the Spring team's
+own formatter), not Spotless with palantir-java-format. Palantir is a fork of
+google-java-format, which does not run on JDK 26; Spring Java Format does, and the Initializr
+files are tab-indented already, so the reformat diff stays small. Still its own chore commit.
