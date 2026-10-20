@@ -5,6 +5,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class AppUserDetailsService implements UserDetailsService {
 
@@ -16,7 +18,9 @@ public class AppUserDetailsService implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-		AppUser user = appUserRepository.findByEmail(email)
+		// Same normalisation as registration, so Alice@Acme.example logs in as alice@acme.example.
+		String normalised = email.strip().toLowerCase(Locale.ROOT);
+		AppUser user = appUserRepository.findByEmail(normalised)
 				.orElseThrow(() -> new UsernameNotFoundException("No user with email " + email));
 		return AuthenticatedUser.from(user);
 	}

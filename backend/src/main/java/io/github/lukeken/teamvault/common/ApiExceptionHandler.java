@@ -2,6 +2,7 @@ package io.github.lukeken.teamvault.common;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -34,6 +35,14 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(ConflictException.class)
 	ResponseEntity<ApiError> conflict(ConflictException e) {
 		return error(HttpStatus.CONFLICT, e.getMessage());
+	}
+
+	// Unique constraints are the last line of defence against races (two registrations of
+	// the same email in the same millisecond). Generic message: the constraint name says
+	// nothing a client should learn.
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	ResponseEntity<ApiError> constraintViolation(DataIntegrityViolationException e) {
+		return error(HttpStatus.CONFLICT, "Resource already exists");
 	}
 
 	@ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class})
