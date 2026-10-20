@@ -45,11 +45,10 @@ public class ApiExceptionHandler {
 		return error(HttpStatus.CONFLICT, "Resource already exists");
 	}
 
-	@ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class})
+	@ExceptionHandler({ IllegalArgumentException.class, MethodArgumentTypeMismatchException.class })
 	ResponseEntity<ApiError> badRequest(Exception e) {
 		String message = e instanceof MethodArgumentTypeMismatchException
-				? "Malformed value in request path or parameter"
-				: e.getMessage();
+				? "Malformed value in request path or parameter" : e.getMessage();
 		return error(HttpStatus.BAD_REQUEST, message);
 	}
 
@@ -67,10 +66,12 @@ public class ApiExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ResponseEntity<ApiError> invalidBody(MethodArgumentNotValidException e) {
-		String message = e.getBindingResult().getFieldErrors().stream()
-				.map(f -> f.getField() + " " + f.getDefaultMessage())
-				.sorted()
-				.collect(Collectors.joining(", "));
+		String message = e.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.map(f -> f.getField() + " " + f.getDefaultMessage())
+			.sorted()
+			.collect(Collectors.joining(", "));
 		return error(HttpStatus.BAD_REQUEST, message);
 	}
 
@@ -82,7 +83,7 @@ public class ApiExceptionHandler {
 	}
 
 	private ResponseEntity<ApiError> error(HttpStatus status, String message) {
-		return ResponseEntity.status(status)
-				.body(new ApiError(status.value(), status.getReasonPhrase(), message));
+		return ResponseEntity.status(status).body(new ApiError(status.value(), status.getReasonPhrase(), message));
 	}
+
 }

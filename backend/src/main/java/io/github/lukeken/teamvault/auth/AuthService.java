@@ -17,44 +17,48 @@ import java.util.Locale;
 @Service
 public class AuthService {
 
-    private final AppUserRepository appUserRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final TokenService tokenService;
+	private final AppUserRepository appUserRepository;
 
-    public AuthService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-                       AuthenticationManager authenticationManager, TokenService tokenService) {
-        this.appUserRepository = appUserRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.tokenService = tokenService;
-    }
+	private final PasswordEncoder passwordEncoder;
 
-    /**
-     * The exists check gives a readable 409 in the normal case. Two concurrent
-     * registrations of the same email are caught by {@code uq_app_user_email}, which the
-     * advice maps to 409 as well. Email is stored lower-cased so the unique constraint
-     * is effectively case-insensitive.
-     */
-    @Transactional
-    public UserResponse register(RegisterRequest request) {
-        String email = request.email().strip().toLowerCase(Locale.ROOT);
-        if (appUserRepository.existsByEmail(email)) {
-            throw new ConflictException("Email already registered");
-        }
-        AppUser user = appUserRepository.save(
-                new AppUser(email, passwordEncoder.encode(request.password()), request.displayName().strip()));
-        return UserResponse.from(user);
-    }
+	private final AuthenticationManager authenticationManager;
 
-    /**
-     * Exchanges email and password for a short-lived access token. A failed check throws
-     * AuthenticationException; the advice turns it into one 401 message for unknown
-     * email and wrong password alike.
-     */
-    public TokenResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
-        return tokenService.issue((AuthenticatedUser) authentication.getPrincipal());
-    }
+	private final TokenService tokenService;
+
+	public AuthService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
+			AuthenticationManager authenticationManager, TokenService tokenService) {
+		this.appUserRepository = appUserRepository;
+		this.passwordEncoder = passwordEncoder;
+		this.authenticationManager = authenticationManager;
+		this.tokenService = tokenService;
+	}
+
+	/**
+	 * The exists check gives a readable 409 in the normal case. Two concurrent
+	 * registrations of the same email are caught by {@code uq_app_user_email}, which the
+	 * advice maps to 409 as well. Email is stored lower-cased so the unique constraint is
+	 * effectively case-insensitive.
+	 */
+	@Transactional
+	public UserResponse register(RegisterRequest request) {
+		String email = request.email().strip().toLowerCase(Locale.ROOT);
+		if (appUserRepository.existsByEmail(email)) {
+			throw new ConflictException("Email already registered");
+		}
+		AppUser user = appUserRepository
+			.save(new AppUser(email, passwordEncoder.encode(request.password()), request.displayName().strip()));
+		return UserResponse.from(user);
+	}
+
+	/**
+	 * Exchanges email and password for a short-lived access token. A failed check throws
+	 * AuthenticationException; the advice turns it into one 401 message for unknown email
+	 * and wrong password alike.
+	 */
+	public TokenResponse login(LoginRequest request) {
+		Authentication authentication = authenticationManager
+			.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+		return tokenService.issue((AuthenticatedUser) authentication.getPrincipal());
+	}
+
 }

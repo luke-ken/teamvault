@@ -18,32 +18,35 @@ import java.nio.charset.StandardCharsets;
  * Issue and verify side of ADR-004, kept apart from {@code SecurityConfig} so a slice
  * test can import the filter chain without needing key material.
  *
- * Both beans share one HS256 key: TeamVault is the only issuer and the only verifier.
- * The Keycloak upgrade path replaces the decoder bean with an issuer-URI one; nothing
- * that consumes {@link JwtDecoder} changes.
+ * Both beans share one HS256 key: TeamVault is the only issuer and the only verifier. The
+ * Keycloak upgrade path replaces the decoder bean with an issuer-URI one; nothing that
+ * consumes {@link JwtDecoder} changes.
  */
 @Configuration
 public class JwtConfig {
 
-    /** Value of the {@code iss} claim; the decoder rejects tokens that carry any other. */
-    public static final String ISSUER = "teamvault";
+	/**
+	 * Value of the {@code iss} claim; the decoder rejects tokens that carry any other.
+	 */
+	public static final String ISSUER = "teamvault";
 
-    @Bean
-    JwtEncoder jwtEncoder(JwtProperties props) {
-        return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey(props)));
-    }
+	@Bean
+	JwtEncoder jwtEncoder(JwtProperties props) {
+		return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey(props)));
+	}
 
-    @Bean
-    JwtDecoder jwtDecoder(JwtProperties props) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey(props))
-                .macAlgorithm(MacAlgorithm.HS256)
-                .build();
-        // Default validator = exp/nbf with 60 s clock skew; plus our issuer check.
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));
-        return decoder;
-    }
+	@Bean
+	JwtDecoder jwtDecoder(JwtProperties props) {
+		NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey(props))
+			.macAlgorithm(MacAlgorithm.HS256)
+			.build();
+		// Default validator = exp/nbf with 60 s clock skew; plus our issuer check.
+		decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));
+		return decoder;
+	}
 
-    private static SecretKey secretKey(JwtProperties props) {
-        return new SecretKeySpec(props.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-    }
+	private static SecretKey secretKey(JwtProperties props) {
+		return new SecretKeySpec(props.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+	}
+
 }

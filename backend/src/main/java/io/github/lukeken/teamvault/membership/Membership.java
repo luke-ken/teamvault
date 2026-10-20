@@ -12,37 +12,54 @@ import java.util.UUID;
 @Entity
 @Table(name = "membership")
 public class Membership {
-    @Id
-    @UuidGenerator
-    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private AppUser user;
+	@Id
+	@UuidGenerator
+	private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "user_id", nullable = false)
+	private AppUser user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "company_id", nullable = false)
+	private Company company;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Role role;
 
-    protected Membership() {}
+	@CreationTimestamp
+	@Column(nullable = false, updatable = false)
+	private Instant createdAt;
 
-    public Membership(AppUser user, Company company, Role role) {
-        this.company = company;
-        this.user = user;
-        this.role = role;
-    }
+	protected Membership() {
+	}
 
-    public UUID getId() { return id; }
-    public AppUser getUser() { return user; }
-    public Company getCompany() { return company; }
-    public Role getRole() { return role; }
-    public Instant getCreatedAt() { return createdAt; }
+	public Membership(AppUser user, Company company, Role role) {
+		this.company = company;
+		this.user = user;
+		this.role = role;
+	}
+
+	public UUID getId() {
+		return id;
+	}
+
+	public AppUser getUser() {
+		return user;
+	}
+
+	public Company getCompany() {
+		return company;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
 }

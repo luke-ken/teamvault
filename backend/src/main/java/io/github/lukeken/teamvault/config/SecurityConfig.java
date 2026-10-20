@@ -16,27 +16,29 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http, JsonAuthenticationEntryPoint entryPoint) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, JsonAuthenticationEntryPoint entryPoint)
+			throws Exception {
 		http
-				// Pure token API, no cookie or session auth: CSRF does not apply.
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/ping").permitAll()
-						// Login is where you request a token, so it cannot demand one.
-						.requestMatchers("/api/auth/**").permitAll()
-						// Health is public by design: a probe cannot carry a token. Details
-						// are hidden in application.yaml, so nothing leaks beyond UP or DOWN.
-						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-						.anyRequest().authenticated())
-				// ADR-004: bearer tokens verified by the JwtDecoder bean (JwtConfig).
-				// The entry point here answers "token present but rejected".
-				.oauth2ResourceServer(oauth2 -> oauth2
-						.jwt(Customizer.withDefaults())
-						.authenticationEntryPoint(entryPoint))
-				// Same entry point for "no token at all", so both 401 paths return
-				// the ApiError JSON shape instead of Spring's empty default body.
-				.exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
+			// Pure token API, no cookie or session auth: CSRF does not apply.
+			.csrf(csrf -> csrf.disable())
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/ping")
+				.permitAll()
+				// Login is where you request a token, so it cannot demand one.
+				.requestMatchers("/api/auth/**")
+				.permitAll()
+				// Health is public by design: a probe cannot carry a token. Details
+				// are hidden in application.yaml, so nothing leaks beyond UP or DOWN.
+				.requestMatchers("/actuator/health", "/actuator/health/**")
+				.permitAll()
+				.anyRequest()
+				.authenticated())
+			// ADR-004: bearer tokens verified by the JwtDecoder bean (JwtConfig).
+			// The entry point here answers "token present but rejected".
+			.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()).authenticationEntryPoint(entryPoint))
+			// Same entry point for "no token at all", so both 401 paths return
+			// the ApiError JSON shape instead of Spring's empty default body.
+			.exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
 		return http.build();
 	}
@@ -45,4 +47,5 @@ public class SecurityConfig {
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
+
 }

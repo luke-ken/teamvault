@@ -13,34 +13,51 @@ import java.util.UUID;
 @Entity
 @Table(name = "app_user")
 public class AppUser {
-    @Id
-    @UuidGenerator
-    private UUID id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+	@Id
+	@UuidGenerator
+	private UUID id;
 
-    @Column(nullable = false)
-    private String passwordHash;
+	@Column(unique = true, nullable = false)
+	private String email;
 
-    @Column(nullable = false)
-    private String displayName;
+	@Column(nullable = false)
+	private String passwordHash;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+	@Column(nullable = false)
+	private String displayName;
 
-    protected AppUser() {}
+	@CreationTimestamp
+	@Column(nullable = false, updatable = false)
+	private Instant createdAt;
 
-    public AppUser(String email, String passwordHash, String displayName) {
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.displayName = displayName;
-    }
+	protected AppUser() {
+	}
 
-    public UUID getId() { return id; }
-    public String getEmail() { return email; }
-    public String getPasswordHash() { return passwordHash; }
-    public String getDisplayName() { return displayName; }
-    public Instant getCreatedAt() { return createdAt; }
+	public AppUser(String email, String passwordHash, String displayName) {
+		this.email = email;
+		this.passwordHash = passwordHash;
+		this.displayName = displayName;
+	}
+
+	public UUID getId() {
+		return id;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getPasswordHash() {
+		return passwordHash;
+	}
+
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
 }

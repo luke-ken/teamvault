@@ -7,7 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MembershipRepository extends JpaRepository<Membership, UUID> {
-    List<Membership> findByUserId(UUID userId);
-    List<Membership> findByCompanyId(UUID companyId);
-    Optional<Membership> findByUserIdAndCompanyId(UUID userId, UUID companyId);
+
+	List<Membership> findByUserId(UUID userId);
+
+	List<Membership> findByCompanyId(UUID companyId);
+
+	Optional<Membership> findByUserIdAndCompanyId(UUID userId, UUID companyId);
+
 }

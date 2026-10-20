@@ -12,9 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Local-filesystem blob store. Deliberately hidden behind this one class so the
- * later swap to S3/MinIO touches nothing but it (see README "deliberately not built").
- * Storage keys are server-generated UUIDs, never client input.
+ * Local-filesystem blob store. Deliberately hidden behind this one class so the later
+ * swap to S3/MinIO touches nothing but it (see README "deliberately not built"). Storage
+ * keys are server-generated UUIDs, never client input.
  */
 @Service
 public class FileStorage {
@@ -25,7 +25,8 @@ public class FileStorage {
 		this.root = Path.of(dir).toAbsolutePath().normalize();
 		try {
 			Files.createDirectories(root);
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new UncheckedIOException("Cannot create storage dir " + root, e);
 		}
 	}
@@ -33,7 +34,8 @@ public class FileStorage {
 	public void store(String storageKey, InputStream content) {
 		try (content) {
 			Files.copy(content, root.resolve(storageKey));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new UncheckedIOException("Failed to store blob " + storageKey, e);
 		}
 	}
@@ -45,8 +47,10 @@ public class FileStorage {
 	public void delete(String storageKey) {
 		try {
 			Files.deleteIfExists(root.resolve(storageKey));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new UncheckedIOException("Failed to delete blob " + storageKey, e);
 		}
 	}
+
 }

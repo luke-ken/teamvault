@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Slice test: the filter chain is real, the decoder is a mock. Ping is permitAll, so
 // no token is ever decoded; the mock only satisfies the resource server's wiring.
 @WebMvcTest(PingController.class)
-@Import({SecurityConfig.class, JsonAuthenticationEntryPoint.class})
+@Import({ SecurityConfig.class, JsonAuthenticationEntryPoint.class })
 class PingControllerTest {
 
 	@Autowired
@@ -28,9 +28,7 @@ class PingControllerTest {
 
 	@Test
 	void pingIsPubliclyReachableAndAnswersPong() throws Exception {
-		mockMvc.perform(get("/api/ping"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.message").value("pong"));
+		mockMvc.perform(get("/api/ping")).andExpect(status().isOk()).andExpect(jsonPath("$.message").value("pong"));
 	}
 
 }

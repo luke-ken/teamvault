@@ -7,7 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID> {
-    List<FileMetadata> findByCompanyIdOrderByCreatedAtDesc(UUID companyId);
 
-    Optional<FileMetadata> findByIdAndCompanyId(UUID id, UUID companyId);
+	List<FileMetadata> findByCompanyIdOrderByCreatedAtDesc(UUID companyId);
+
+	Optional<FileMetadata> findByIdAndCompanyId(UUID id, UUID companyId);
+
 }

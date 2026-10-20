@@ -20,7 +20,9 @@ import java.util.UUID;
 public class FileService {
 
 	private final FileMetadataRepository files;
+
 	private final MembershipRepository memberships;
+
 	private final FileStorage storage;
 
 	public FileService(FileMetadataRepository files, MembershipRepository memberships, FileStorage storage) {
@@ -40,19 +42,20 @@ public class FileService {
 		String storageKey = UUID.randomUUID().toString();
 		try {
 			storage.store(storageKey, upload.getInputStream());
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			throw new UncheckedIOException("Failed to read upload", e);
 		}
 
-		FileMetadata metadata = new FileMetadata(
-				membership.getCompany(), membership.getUser(),
-				filename, contentTypeOrDefault(upload), upload.getSize(), storageKey);
+		FileMetadata metadata = new FileMetadata(membership.getCompany(), membership.getUser(), filename,
+				contentTypeOrDefault(upload), upload.getSize(), storageKey);
 		try {
 			// Flush inside the transaction so the tenant-scoped unique constraint
 			// (company_id, filename) surfaces here, where the blob can be cleaned up.
 			FileMetadata saved = files.saveAndFlush(metadata);
 			return FileResponse.from(saved);
-		} catch (DataIntegrityViolationException e) {
+		}
+		catch (DataIntegrityViolationException e) {
 			storage.delete(storageKey);
 			throw new ConflictException("A file named '" + filename + "' already exists in this company");
 		}
@@ -61,9 +64,7 @@ public class FileService {
 	@Transactional(readOnly = true)
 	public List<FileResponse> list(UUID callerId, UUID companyId) {
 		requireMembership(callerId, companyId);
-		return files.findByCompanyIdOrderByCreatedAtDesc(companyId).stream()
-				.map(FileResponse::from)
-				.toList();
+		return files.findByCompanyIdOrderByCreatedAtDesc(companyId).stream().map(FileResponse::from).toList();
 	}
 
 	@Transactional(readOnly = true)
@@ -87,18 +88,16 @@ public class FileService {
 	// The caller id is the verified JWT subject (ADR-004), so no user lookup is needed.
 	private Membership requireMembership(UUID callerId, UUID companyId) {
 		return memberships.findByUserIdAndCompanyId(callerId, companyId)
-				.orElseThrow(() -> new ForbiddenException("Not a member of this company"));
+			.orElseThrow(() -> new ForbiddenException("Not a member of this company"));
 	}
 
 	private FileMetadata requireFile(UUID companyId, UUID fileId) {
-		return files.findByIdAndCompanyId(fileId, companyId)
-				.orElseThrow(() -> new NotFoundException("File not found"));
+		return files.findByIdAndCompanyId(fileId, companyId).orElseThrow(() -> new NotFoundException("File not found"));
 	}
 
 	private String contentTypeOrDefault(MultipartFile upload) {
 		String contentType = upload.getContentType();
-		return contentType == null || contentType.isBlank()
-				? "application/octet-stream"
-				: contentType;
+		return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
 	}
+
 }

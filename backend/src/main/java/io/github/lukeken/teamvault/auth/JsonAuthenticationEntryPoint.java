@@ -16,29 +16,31 @@ import java.io.IOException;
 
 /**
  * 401 for requests that never reach a controller: no token, or a token the decoder
- * rejects. Filter-chain failures bypass the controller advice, so the same ApiError
- * shape is written here by hand (ADR-004). WWW-Authenticate names the scheme as RFC
- * 6750 asks; nothing beyond "missing" versus "invalid" leaves the server.
+ * rejects. Filter-chain failures bypass the controller advice, so the same ApiError shape
+ * is written here by hand (ADR-004). WWW-Authenticate names the scheme as RFC 6750 asks;
+ * nothing beyond "missing" versus "invalid" leaves the server.
  */
 @Component
 public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper;
 
-    public JsonAuthenticationEntryPoint(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+	public JsonAuthenticationEntryPoint(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
 
-    @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        String message = authException instanceof InvalidBearerTokenException
-                ? "Invalid or expired token"
-                : "Authentication required";
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
+	@Override
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException {
+		String message = authException instanceof InvalidBearerTokenException ? "Invalid or expired token"
+				: "Authentication required";
+		HttpStatus status = HttpStatus.UNAUTHORIZED;
 
-        response.setStatus(status.value());
-        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), new ApiError(status.value(), status.getReasonPhrase(), message));
-    }
+		response.setStatus(status.value());
+		response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		objectMapper.writeValue(response.getOutputStream(),
+				new ApiError(status.value(), status.getReasonPhrase(), message));
+	}
+
 }

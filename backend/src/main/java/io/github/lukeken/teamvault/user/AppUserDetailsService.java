@@ -18,10 +18,12 @@ public class AppUserDetailsService implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-		// Same normalisation as registration, so Alice@Acme.example logs in as alice@acme.example.
+		// Same normalisation as registration, so Alice@Acme.example logs in as
+		// alice@acme.example.
 		String normalised = email.strip().toLowerCase(Locale.ROOT);
 		AppUser user = appUserRepository.findByEmail(normalised)
-				.orElseThrow(() -> new UsernameNotFoundException("No user with email " + email));
+			.orElseThrow(() -> new UsernameNotFoundException("No user with email " + email));
 		return AuthenticatedUser.from(user);
 	}
+
 }

@@ -73,11 +73,13 @@ class FileApiIntegrationTest {
 	}
 
 	private String login(String email) throws Exception {
-		String body = mvc.perform(post("/api/auth/login")
-										.contentType(MediaType.APPLICATION_JSON)
-										.content("{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}"))
-						.andExpect(status().isOk())
-						.andReturn().getResponse().getContentAsString();
+		String body = mvc
+			.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}"))
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		return JsonPath.read(body, "$.token");
 	}
 
@@ -85,63 +87,59 @@ class FileApiIntegrationTest {
 	void uploadListDownload_roundTrip_withinOwnCompany() throws Exception {
 		var upload = new MockMultipartFile("file", "report.txt", "text/plain", "quarterly numbers".getBytes());
 
-		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files")
-						.file(upload).with(bearer(ALICE)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.filename", is("report.txt")))
-				.andExpect(jsonPath("$.uploadedBy", is("Alice Admin")))
-				.andReturn().getResponse().getContentAsString();
+		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.filename", is("report.txt")))
+			.andExpect(jsonPath("$.uploadedBy", is("Alice Admin")))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		String fileId = JsonPath.read(body, "$.id");
 
 		mvc.perform(get("/api/companies/" + ACME + "/files").with(bearer(ALICE)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id", is(fileId)));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id", is(fileId)));
 
-		mvc.perform(get("/api/companies/" + ACME + "/files/" + fileId + "/download")
-						.with(bearer(ALICE)))
-				.andExpect(status().isOk())
-				.andExpect(content().contentType("text/plain"))
-				.andExpect(content().string("quarterly numbers"));
+		mvc.perform(get("/api/companies/" + ACME + "/files/" + fileId + "/download").with(bearer(ALICE)))
+			.andExpect(status().isOk())
+			.andExpect(content().contentType("text/plain"))
+			.andExpect(content().string("quarterly numbers"));
 	}
 
 	// THE negative test (ADR-003): cross-tenant access must fail at the backend.
 	@Test
 	void crossTenantAccess_isImpossible() throws Exception {
 		var upload = new MockMultipartFile("file", "secret.txt", "text/plain", "acme only".getBytes());
-		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files")
-						.file(upload).with(bearer(ALICE)))
-				.andExpect(status().isCreated())
-				.andReturn().getResponse().getContentAsString();
+		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
 		String acmeFileId = JsonPath.read(body, "$.id");
 
 		// Bob is no member of Acme: listing and direct reads are forbidden.
-		mvc.perform(get("/api/companies/" + ACME + "/files").with(bearer(BOB)))
-				.andExpect(status().isForbidden());
-		mvc.perform(get("/api/companies/" + ACME + "/files/" + acmeFileId + "/download")
-						.with(bearer(BOB)))
-				.andExpect(status().isForbidden());
+		mvc.perform(get("/api/companies/" + ACME + "/files").with(bearer(BOB))).andExpect(status().isForbidden());
+		mvc.perform(get("/api/companies/" + ACME + "/files/" + acmeFileId + "/download").with(bearer(BOB)))
+			.andExpect(status().isForbidden());
 
 		// The sneaky path: Bob queries an Acme file id under HIS company. The
 		// company-scoped lookup makes it a 404, not a leak.
-		mvc.perform(get("/api/companies/" + GLOBEX + "/files/" + acmeFileId + "/download")
-						.with(bearer(BOB)))
-				.andExpect(status().isNotFound());
+		mvc.perform(get("/api/companies/" + GLOBEX + "/files/" + acmeFileId + "/download").with(bearer(BOB)))
+			.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void duplicateFilenameInSameCompany_conflicts() throws Exception {
 		var upload = new MockMultipartFile("file", "twice.txt", "text/plain", "v1".getBytes());
-		mvc.perform(multipart("/api/companies/" + ACME + "/files")
-						.file(upload).with(bearer(ALICE)))
-				.andExpect(status().isCreated());
-		mvc.perform(multipart("/api/companies/" + ACME + "/files")
-						.file(upload).with(bearer(ALICE)))
-				.andExpect(status().isConflict());
+		mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isCreated());
+		mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isConflict());
 	}
 
 	@Test
 	void withoutCredentials_401() throws Exception {
-		mvc.perform(get("/api/companies/" + ACME + "/files"))
-				.andExpect(status().isUnauthorized());
+		mvc.perform(get("/api/companies/" + ACME + "/files")).andExpect(status().isUnauthorized());
 	}
+
 }

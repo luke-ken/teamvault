@@ -17,22 +17,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+	private final AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
+	public AuthController(AuthService authService) {
+		this.authService = authService;
+	}
 
-    /** Creates the account only. The client logs in afterwards; tokens come from one place. */
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
-    }
+	/**
+	 * Creates the account only. The client logs in afterwards; tokens come from one
+	 * place.
+	 */
+	@PostMapping("/register")
+	@ResponseStatus(HttpStatus.CREATED)
+	public UserResponse register(@Valid @RequestBody RegisterRequest request) {
+		return authService.register(request);
+	}
 
-    /** Logout has no endpoint: the token is stateless, the client discards it (ADR-004). */
-    @PostMapping("/login")
-    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
-    }
+	/**
+	 * Logout has no endpoint: the token is stateless, the client discards it (ADR-004).
+	 */
+	@PostMapping("/login")
+	public TokenResponse login(@Valid @RequestBody LoginRequest request) {
+		return authService.login(request);
+	}
+
 }

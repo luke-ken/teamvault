@@ -33,44 +33,43 @@ public class FileController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public FileResponse upload(@AuthenticationPrincipal Jwt caller,
-			@PathVariable UUID companyId,
+	public FileResponse upload(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@RequestParam("file") MultipartFile file) {
 		return fileService.upload(callerId(caller), companyId, file);
 	}
 
 	@GetMapping
-	public List<FileResponse> list(@AuthenticationPrincipal Jwt caller,
-			@PathVariable UUID companyId) {
+	public List<FileResponse> list(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
 		return fileService.list(callerId(caller), companyId);
 	}
 
 	@GetMapping("/{fileId}")
-	public FileResponse get(@AuthenticationPrincipal Jwt caller,
-			@PathVariable UUID companyId,
+	public FileResponse get(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@PathVariable UUID fileId) {
 		return fileService.get(callerId(caller), companyId, fileId);
 	}
 
 	@GetMapping("/{fileId}/download")
-	public ResponseEntity<Resource> download(@AuthenticationPrincipal Jwt caller,
-			@PathVariable UUID companyId,
+	public ResponseEntity<Resource> download(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@PathVariable UUID fileId) {
 		FileService.Download download = fileService.download(callerId(caller), companyId, fileId);
 		return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType(download.metadata().contentType()))
-				.contentLength(download.metadata().sizeBytes())
-				.header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+			.contentType(MediaType.parseMediaType(download.metadata().contentType()))
+			.contentLength(download.metadata().sizeBytes())
+			.header(HttpHeaders.CONTENT_DISPOSITION,
+					ContentDisposition.attachment()
 						.filename(download.metadata().filename(), StandardCharsets.UTF_8)
-						.build().toString())
-				.body(download.content());
+						.build()
+						.toString())
+			.body(download.content());
 	}
 
 	/**
-	 * ADR-004: sub carries the user UUID, set by TokenService and verified by the
-	 * decoder before this method runs. No database lookup needed to know who calls.
+	 * ADR-004: sub carries the user UUID, set by TokenService and verified by the decoder
+	 * before this method runs. No database lookup needed to know who calls.
 	 */
 	private static UUID callerId(Jwt caller) {
 		return UUID.fromString(caller.getSubject());
 	}
+
 }

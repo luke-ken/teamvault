@@ -10,30 +10,44 @@ import java.util.UUID;
 @Entity
 @Table(name = "company")
 public class Company {
-    @Id
-    @UuidGenerator
-    private UUID id;
 
-    @Column(nullable = false)
-    private String name;
+	@Id
+	@UuidGenerator
+	private UUID id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Tier tier;
+	@Column(nullable = false)
+	private String name;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Tier tier;
 
-    protected Company() {}
+	@CreationTimestamp
+	@Column(nullable = false, updatable = false)
+	private Instant createdAt;
 
-    public Company(String name, Tier tier) {
-        this.name = name;
-        this.tier = tier;
-    }
+	protected Company() {
+	}
 
-    public UUID getId() { return id; }
-    public String getName() { return name; }
-    public Tier getTier() { return tier; }
-    public Instant getCreatedAt() { return createdAt; }
+	public Company(String name, Tier tier) {
+		this.name = name;
+		this.tier = tier;
+	}
+
+	public UUID getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public Tier getTier() {
+		return tier;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
 }
