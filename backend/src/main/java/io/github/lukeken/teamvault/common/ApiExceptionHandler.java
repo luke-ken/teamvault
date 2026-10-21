@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,6 +51,13 @@ public class ApiExceptionHandler {
 		String message = e instanceof MethodArgumentTypeMismatchException
 				? "Malformed value in request path or parameter" : e.getMessage();
 		return error(HttpStatus.BAD_REQUEST, message);
+	}
+
+	// Broken JSON or a value the type cannot take (an unknown tier, a word where a number
+	// goes). The parser's message names internal classes, so it stays server-side.
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	ResponseEntity<ApiError> unreadableBody(HttpMessageNotReadableException e) {
+		return error(HttpStatus.BAD_REQUEST, "Malformed request body");
 	}
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
