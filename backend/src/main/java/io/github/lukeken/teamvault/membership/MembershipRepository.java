@@ -12,6 +12,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 	@EntityGraph(attributePaths = "company")
 	List<Membership> findByUserId(UUID userId);
 
+	@EntityGraph(attributePaths = "user")
 	List<Membership> findByCompanyId(UUID companyId);
 
 	Optional<Membership> findByUserIdAndCompanyId(UUID userId, UUID companyId);
