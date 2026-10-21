@@ -1,9 +1,13 @@
 package io.github.lukeken.teamvault.common;
 
-public class ForbiddenException extends RuntimeException {
+public class ForbiddenException extends ApiException {
 
 	public ForbiddenException(String message) {
-		super(message);
+		super(ProblemType.FORBIDDEN, message);
+	}
+
+	public ForbiddenException(ProblemType type, String message) {
+		super(type, message);
 	}
 
 }

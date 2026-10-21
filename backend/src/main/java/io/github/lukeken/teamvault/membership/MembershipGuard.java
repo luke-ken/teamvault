@@ -1,6 +1,7 @@
 package io.github.lukeken.teamvault.membership;
 
 import io.github.lukeken.teamvault.common.ForbiddenException;
+import io.github.lukeken.teamvault.common.ProblemType;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -25,7 +26,7 @@ public class MembershipGuard {
 	 */
 	public Membership requireMember(UUID callerId, UUID companyId) {
 		return memberships.findByUserIdAndCompanyId(callerId, companyId)
-			.orElseThrow(() -> new ForbiddenException("Not a member of this company"));
+			.orElseThrow(() -> new ForbiddenException(ProblemType.MEMBERSHIP_REQUIRED, "Not a member of this company"));
 	}
 
 	/**
@@ -35,7 +36,7 @@ public class MembershipGuard {
 	public Membership requireAdmin(UUID callerId, UUID companyId) {
 		Membership membership = requireMember(callerId, companyId);
 		if (membership.getRole() != Role.ADMIN) {
-			throw new ForbiddenException("Requires the ADMIN role in this company");
+			throw new ForbiddenException(ProblemType.ADMIN_ROLE_REQUIRED, "Requires the ADMIN role in this company");
 		}
 		return membership;
 	}

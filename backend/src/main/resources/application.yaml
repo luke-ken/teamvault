@@ -45,3 +45,7 @@ management:
         enabled: true
       # Outsiders see UP or DOWN, never which component failed.
       show-details: never
+
+logging:
+  pattern:
+    correlation: "[%X{requestId:-}] "

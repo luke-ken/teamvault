@@ -60,7 +60,7 @@ tier, a word where a number goes).
 400. A path variable or query parameter has the wrong form, for example a company id that is
 not a UUID.
 
-## payload-too-large
+## content-too-large
 413. The upload exceeds the configured size limit.
 
 ## Framework errors

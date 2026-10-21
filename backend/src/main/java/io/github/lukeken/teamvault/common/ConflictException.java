@@ -1,9 +1,9 @@
 package io.github.lukeken.teamvault.common;
 
-public class ConflictException extends RuntimeException {
+public class ConflictException extends ApiException {
 
 	public ConflictException(String message) {
-		super(message);
+		super(ProblemType.ALREADY_EXISTS, message);
 	}
 
 }
