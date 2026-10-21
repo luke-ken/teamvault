@@ -2,6 +2,17 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-21 – S2·Session 1 and 2 (first half) – Error contract started. ADR-005 (Problem
+  Details as the error body, `type` as a GitHub anchor into the new `docs/errors.md`, the
+  security entry point delegating to the MVC resolver so there is one writer of error bodies,
+  request id by filter ahead of Spring Security; status proposed until the switch lands),
+  build plan in `docs/plans/error-contract-plan.md`. Code: `ProblemType` enum (slug + status,
+  413 on the un-deprecated `CONTENT_TOO_LARGE`), `ApiException` base carrying its type, the
+  three exceptions as subclasses, the guard's two 403s named, `RequestIdFilter` (validated
+  `X-Request-Id` or UUID, MDC, header on every response), `logging.pattern.correlation`
+  verified in the test log. 18/18 green, two commits. **Next:** plan steps 3 to 5, the advice
+  on `ResponseEntityExceptionHandler`, the delegating entry point, test migration, ADR-005
+  to accepted; then the error-contract tests (steps 6, 7) and README.
 - 2026-10-21 – S1·S6 + S10 to S12, Sprint 1 build complete – Three commits. Shared
   `AbstractIntegrationTest` (one configuration, one Spring context and one Postgres container
   for every API test; storage dir created by hand because a `@TempDir` dies with its class
