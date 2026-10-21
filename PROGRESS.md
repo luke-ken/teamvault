@@ -2,6 +2,23 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-21 – S1·S6 + S10 to S12, Sprint 1 build complete – Three commits. Shared
+  `AbstractIntegrationTest` (one configuration, one Spring context and one Postgres container
+  for every API test; storage dir created by hand because a `@TempDir` dies with its class
+  while the cached context lives on), the two existing tests shrunk to their cases, the
+  `contextLoads` class deleted as redundant. `MembershipGuard` holds the ADR-003 rule in one
+  place (`requireMember`, `requireAdmin` on top), `FileService` uses it, `Caller.id(jwt)`
+  shared by the controllers. Companies: create with the caller as ADMIN in the same
+  transaction, get for members, "my companies" with the caller's role in each
+  (`@EntityGraph` so it is one query). Members: add as ADMIN only (404 unknown email, 409
+  already a member, unique constraint as the race backstop), list for members. Rule kept from
+  files: a non-member gets 403 whether the company exists or not. New 400 for unreadable
+  bodies (unknown enum value was a 500). Tests: company (4) and membership (3) classes; the
+  membership test registers its own users because the database is shared across classes and
+  the file test needs bob outside Acme. 18/18 green, formatter clean. README: full bearer
+  flow register, login, company, member, upload, list, 403 for the role; six new API rows;
+  role-model paragraph. **Next:** ten minutes aloud on auth (DoD line 6), then Sprint 2
+  breakdown: OpenAPI gated by profile, Problem Details, request id in error and log.
 - 2026-10-20 – S1·S10 + readiness – Six commits. Registration (`AuthService.register`: exists
   check for the readable 409, `uq_app_user_email` as the race backstop, now mapped from
   `DataIntegrityViolationException` to 409 in the advice; email stored lower-cased and looked

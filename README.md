@@ -6,8 +6,9 @@ outside it. Storage tiers for small vs. large companies.
 
 > **Status:** the backend core is running: tenant-isolated file upload/list/download on a
 > hand-designed PostgreSQL schema, registration and bearer-token auth with self-issued JWTs,
-> a health endpoint with readiness probes, integration-tested against a real Postgres
-> (Testcontainers), formatter enforced by the build. This repo is built in public; the commit history *is* the
+> companies with an ADMIN/MEMBER role model enforced in the service layer, a health endpoint
+> with readiness probes, integration-tested against a real Postgres (Testcontainers), formatter
+> enforced by the build. This repo is built in public; the commit history *is* the
 > build log. See [`PROGRESS.md`](PROGRESS.md) for the journal and
 > [`docs/adr/`](docs/adr/) for architecture decisions.
 
@@ -92,6 +93,20 @@ curl -s -X POST localhost:8080/api/auth/register \
 # -> {"id":"...","email":"carol@example.com","displayName":"Carol"}
 # same email again, in any letter case: 409 Conflict
 
+# log in as carol and found a company: the creator becomes its first ADMIN, same transaction
+CAROL=$(curl -s -X POST localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"carol@example.com","password":"correct-horse-battery"}' | jq -r .token)
+INITECH=$(curl -s -X POST localhost:8080/api/companies \
+  -H "Authorization: Bearer $CAROL" -H "Content-Type: application/json" \
+  -d '{"name":"Initech","tier":"SMALL"}' | jq -r .id)
+
+# add bob as MEMBER (ADMIN only), then list the members
+curl -s -X POST localhost:8080/api/companies/$INITECH/members \
+  -H "Authorization: Bearer $CAROL" -H "Content-Type: application/json" \
+  -d '{"email":"bob@globex.example"}'
+curl -s -H "Authorization: Bearer $CAROL" localhost:8080/api/companies/$INITECH/members
+
 # exchange credentials for a token, valid 15 minutes
 TOKEN=$(curl -s -X POST localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
@@ -119,6 +134,13 @@ BOB=$(curl -s -X POST localhost:8080/api/auth/login \
   -d '{"email":"bob@globex.example","password":"devpass12"}' | jq -r .token)
 curl -H "Authorization: Bearer $BOB" localhost:8080/api/companies/$ACME/files
 # -> {"status":403,"error":"Forbidden","message":"Not a member of this company"}
+
+# bob does see Initech under his companies, as MEMBER; adding someone himself is a 403
+curl -s -H "Authorization: Bearer $BOB" localhost:8080/api/companies
+curl -s -X POST localhost:8080/api/companies/$INITECH/members \
+  -H "Authorization: Bearer $BOB" -H "Content-Type: application/json" \
+  -d '{"email":"alice@acme.example"}'
+# -> {"status":403,"error":"Forbidden","message":"Requires the ADMIN role in this company"}
 ```
 
 A wrong password and an unknown email produce the same 401 body and take the same time
@@ -153,6 +175,11 @@ all test containers once the JVM exits. Only Docker needs to be up for this, not
 | GET | `/actuator/health`, `/actuator/health/{liveness,readiness}` | public | UP or DOWN, no component details |
 | POST | `/api/auth/register` | public | `{email, password, displayName}` in, `{id, email, displayName}` out, 409 on a known email |
 | POST | `/api/auth/login` | public | `{email, password}` in, `{token, expiresAt}` out |
+| POST | `/api/companies` | bearer | `{name, tier}` in, the caller becomes ADMIN in the same transaction |
+| GET | `/api/companies` | bearer | the caller's companies with the caller's role in each |
+| GET | `/api/companies/{companyId}` | bearer | company details (member only, 403 otherwise) |
+| POST | `/api/companies/{companyId}/members` | bearer, ADMIN | `{email, role?}` in, 404 unknown email, 409 already a member |
+| GET | `/api/companies/{companyId}/members` | bearer | members with roles (member only) |
 | POST | `/api/companies/{companyId}/files` | bearer | multipart upload (member only) |
 | GET | `/api/companies/{companyId}/files` | bearer | list company files, newest first |
 | GET | `/api/companies/{companyId}/files/{fileId}` | bearer | file metadata |
@@ -163,7 +190,10 @@ request can fail: in the filter chain (401, missing or invalid token, written by
 entry point) and in the controllers (400 validation, 401 bad credentials, 403, 404, 409
 including the unique-constraint race behind the exists check).
 Cross-tenant requests fail with 403 (not a member) or 404 (foreign file id under your
-company), covered by `FileApiIntegrationTest.crossTenantAccess_isImpossible`.
+company), covered by `FileApiIntegrationTest.crossTenantAccess_isImpossible`. A non-member
+gets 403 whether or not the company exists, so error codes never reveal which ids are real.
+The role check sits on top of the membership check in one `MembershipGuard`: a member who
+lacks ADMIN is told what is missing, a non-member is told nothing more than 403.
 
 ## Deliberately not built (yet)
 
@@ -179,8 +209,9 @@ Knowing what NOT to build at this scale is part of the design:
   the server stateless; the client logs in again. The triggers that would change this
   (a second service verifying tokens, an external identity provider) are written down in
   [ADR-004](docs/adr/004-self-issued-jwt-auth.md).
-- **Roles beyond membership, company CRUD endpoints**: next on the roadmap; the
-  schema and auth foundation for them are already in place.
+- **Role changes, member removal, company update and delete**: the read and create
+  paths exist; the destructive ones wait for the audit trail in Sprint 4, so nothing
+  disappears without a record of who did it.
 - **Everything on the production ladder marked planned or named**: rate limiting, Redis,
   object store, CI, metrics. Each with its sprint or its reason in
   [`docs/production-readiness.md`](docs/production-readiness.md).
