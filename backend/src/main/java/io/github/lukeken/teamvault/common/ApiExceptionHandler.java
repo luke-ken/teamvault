@@ -133,7 +133,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	// Catch-all: log the details server-side, never leak internals to the client (OWASP).
-	// about:blank on purpose: the status is all the client is told.
+	// No type on purpose, which RFC 9457 reads as about:blank: the status is all the
+	// client is told.
 	@ExceptionHandler(Exception.class)
 	ProblemDetail unexpected(Exception e) {
 		log.error("Unhandled exception", e);
