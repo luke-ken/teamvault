@@ -65,5 +65,5 @@ not a UUID.
 
 ## Framework errors
 Unknown route (404), wrong HTTP method (405), unsupported or unacceptable media type (415, 406)
-and the generic 500 use `type: about:blank`. The status and the request id are all a client
-needs there, and the 500 never carries internal detail.
+and the generic 500 carry no `type` member, which RFC 9457 reads as `about:blank`. The status
+and the request id are all a client needs there, and the 500 never carries internal detail.

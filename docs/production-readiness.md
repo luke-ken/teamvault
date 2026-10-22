@@ -71,9 +71,9 @@ cheap to run, not what makes them possible.
 
 | Item | Status | Note |
 |---|---|---|
-| One error shape for every failure path, including the 401 from the filter chain | built | `JsonAuthenticationEntryPoint` and the advice agree |
-| Problem Details (RFC 9457) instead of the custom error record | sprint 2 | Spring supports it natively; the shape becomes a standard |
-| Request id in the error body and in the log line | sprint 2 | So a support case finds its log entry |
+| One error shape for every failure path, including the 401 from the filter chain | built | The entry point delegates to the MVC resolver; the advice is the one writer |
+| Problem Details (RFC 9457) instead of the custom error record | built | ADR-005; `type` is an anchor into `docs/errors.md`, the advice extends `ResponseEntityExceptionHandler` |
+| Request id in the error body and in the log line | built | `RequestIdFilter` ahead of the security chain, `X-Request-Id` on every response, `requestId` in every problem body |
 | OpenAPI document generated from the controllers | sprint 2 | With the bearer scheme declared |
 | Frontend client generated from the OpenAPI document | sprint 3 | Hand-mirrored schemas drift at runtime, generated types drift at build time |
 | API versioning | named | Path or media type; one client today, no version needed |

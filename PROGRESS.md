@@ -2,6 +2,22 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-22 – S2·Session 2 complete – Error contract switched. `ApiExceptionHandler` now
+  extends `ResponseEntityExceptionHandler`: four overrides where Spring owns the mapping
+  (validation with a sorted `errors` list, unreadable body, type mismatch, upload size), one
+  handler for every `ApiException` via its type, three for authentication (no token, bad
+  token, bad credentials), two for infrastructure, one about:blank catch-all; every body
+  passes `handleExceptionInternal` once for the `requestId`. `JsonAuthenticationEntryPoint`
+  no longer serialises anything, it hands the exception to the MVC resolver (Boot's
+  ObjectMapper lacks the ProblemDetail mixin, the converter has it). Six assertions migrated
+  to `$.detail` or `$.errors`, the login same-body test compares bodies without the id.
+  New: `ErrorContractApiIntegrationTest` (both exits, about:blank 404, request id generated,
+  echoed, replaced) and `ApiExceptionHandlerTest`, the second slice test. Two Spring 7 facts
+  learnt the hard way: a bare `ProblemDetail` leaves `type` out when it is about:blank, and
+  Boot's test exclude filter hides classes nested in a test class from scanning, so the
+  throwaway controller needs `@Import`. ADR-005 accepted. 30/30 green, two commits plus
+  docs. README error paragraph and example bodies, two ladder rows to built. **Next:**
+  Session 3 (T) OpenAPI concepts, then Session 4 springdoc gated by profile and `GET /api/me`.
 - 2026-10-21 – S2·Session 1 and 2 (first half) – Error contract started. ADR-005 (Problem
   Details as the error body, `type` as a GitHub anchor into the new `docs/errors.md`, the
   security entry point delegating to the MVC resolver so there is one writer of error bodies,

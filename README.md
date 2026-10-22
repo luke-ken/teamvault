@@ -126,21 +126,25 @@ curl -H "Authorization: Bearer $TOKEN" \
 # no token: 401 before any controller runs
 curl -i localhost:8080/api/companies/$ACME/files
 # -> WWW-Authenticate: Bearer
-# -> {"status":401,"error":"Unauthorized","message":"Authentication required"}
+# -> X-Request-Id: 6f1c2a9e-...
+# -> {"type":".../docs/errors.md#authentication-required","title":"Unauthorized","status":401,
+#     "detail":"Authentication required","instance":"/api/companies/<acme>/files","requestId":"6f1c2a9e-..."}
 
 # the point of the whole design: bob is not an Acme member
 BOB=$(curl -s -X POST localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"bob@globex.example","password":"devpass12"}' | jq -r .token)
 curl -H "Authorization: Bearer $BOB" localhost:8080/api/companies/$ACME/files
-# -> {"status":403,"error":"Forbidden","message":"Not a member of this company"}
+# -> {"type":".../docs/errors.md#membership-required","title":"Forbidden","status":403,
+#     "detail":"Not a member of this company","instance":"...","requestId":"..."}
 
 # bob does see Initech under his companies, as MEMBER; adding someone himself is a 403
 curl -s -H "Authorization: Bearer $BOB" localhost:8080/api/companies
 curl -s -X POST localhost:8080/api/companies/$INITECH/members \
   -H "Authorization: Bearer $BOB" -H "Content-Type: application/json" \
   -d '{"email":"alice@acme.example"}'
-# -> {"status":403,"error":"Forbidden","message":"Requires the ADMIN role in this company"}
+# -> {"type":".../docs/errors.md#admin-role-required","title":"Forbidden","status":403,
+#     "detail":"Requires the ADMIN role in this company","instance":"...","requestId":"..."}
 ```
 
 A wrong password and an unknown email produce the same 401 body and take the same time
@@ -185,10 +189,16 @@ all test containers once the JVM exits. Only Docker needs to be up for this, not
 | GET | `/api/companies/{companyId}/files/{fileId}` | bearer | file metadata |
 | GET | `/api/companies/{companyId}/files/{fileId}/download` | bearer | file content |
 
-Errors are clean JSON (`{status, error, message}`), never stack traces, on both paths a
-request can fail: in the filter chain (401, missing or invalid token, written by a custom
-entry point) and in the controllers (400 validation, 401 bad credentials, 403, 404, 409
-including the unique-constraint race behind the exists check).
+Errors are Problem Details (RFC 9457, `application/problem+json`), never stack traces, on
+both paths a request can fail: in the filter chain (401, missing or invalid token; the
+security entry point hands the exception to the MVC resolver, so the same advice writes
+every error body) and in the controllers (400 validation with an `errors` list of
+`{field, message}`, 400 malformed body, 401 bad credentials, 403, 404, 409 including the
+unique-constraint race behind the exists check). `type` is an anchor into the error
+catalogue, [docs/errors.md](docs/errors.md), which clients switch on; `detail` is for
+humans and may change. Every response, success included, carries `X-Request-Id` (a
+well-formed client id is kept, anything else replaced), and the same id sits in the error
+body and in each log line of that request (ADR-005).
 Cross-tenant requests fail with 403 (not a member) or 404 (foreign file id under your
 company), covered by `FileApiIntegrationTest.crossTenantAccess_isImpossible`. A non-member
 gets 403 whether or not the company exists, so error codes never reveal which ids are real.
