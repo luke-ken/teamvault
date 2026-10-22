@@ -37,7 +37,7 @@ public class SecurityConfig {
 			// The entry point here answers "token present but rejected".
 			.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()).authenticationEntryPoint(entryPoint))
 			// Same entry point for "no token at all", so both 401 paths return
-			// the ApiError JSON shape instead of Spring's empty default body.
+			// the problem body from the advice instead of Spring's empty default body.
 			.exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint));
 
 		return http.build();

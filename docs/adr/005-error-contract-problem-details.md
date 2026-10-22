@@ -1,7 +1,7 @@
 # ADR-005: Problem Details as the error contract, request id on every response
 
-- **Date:** 2026-10-21
-- **Status:** proposed
+- **Date:** 2026-10-22
+- **Status:** accepted
 
 ## Context
 Every failure path answers one JSON shape, `{status, error, message}`, written by the

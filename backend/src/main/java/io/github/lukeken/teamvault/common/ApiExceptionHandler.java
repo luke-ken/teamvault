@@ -2,96 +2,148 @@ package io.github.lukeken.teamvault.common;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.List;
 
+/**
+ * The one writer of error bodies (ADR-005). The base class turns Spring MVC's own
+ * exceptions (unknown route, wrong method, unsupported media type, unreadable body,
+ * validation, type mismatch, upload size) into Problem Details; all of them funnel
+ * through handleExceptionInternal, overridden once to add the request id. Security-chain
+ * failures arrive here too: JsonAuthenticationEntryPoint delegates them to the MVC
+ * resolver.
+ */
 @RestControllerAdvice
-public class ApiExceptionHandler {
+public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
-	public record ApiError(int status, String error, String message) {
+	record FieldViolation(String field, String message) {
 	}
 
-	@ExceptionHandler(NotFoundException.class)
-	ResponseEntity<ApiError> notFound(NotFoundException e) {
-		return error(HttpStatus.NOT_FOUND, e.getMessage());
+	// --- framework exceptions: decorate what the base class built ---
+
+	@Override
+	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+			HttpStatusCode status, WebRequest request) {
+		ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, status, request);
+		if (response != null && response.getBody() instanceof ProblemDetail problem) {
+			Problems.decorate(problem);
+		}
+		return response;
 	}
 
-	@ExceptionHandler(ForbiddenException.class)
-	ResponseEntity<ApiError> forbidden(ForbiddenException e) {
-		return error(HttpStatus.FORBIDDEN, e.getMessage());
+	@Override
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		List<FieldViolation> errors = ex.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.sorted(Comparator.comparing(FieldError::getField))
+			.map(f -> new FieldViolation(f.getField(), String.valueOf(f.getDefaultMessage())))
+			.toList();
+		ProblemDetail problem = Problems.of(ProblemType.VALIDATION_FAILED, "Validation failed");
+		problem.setProperty("errors", errors);
+		return handleExceptionInternal(ex, problem, headers, status, request);
 	}
 
-	@ExceptionHandler(ConflictException.class)
-	ResponseEntity<ApiError> conflict(ConflictException e) {
-		return error(HttpStatus.CONFLICT, e.getMessage());
+	// Broken JSON or a value the type cannot take (an unknown tier, a word where a number
+	// goes). The parser's message names internal classes, so it stays server-side.
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex, Problems.of(ProblemType.MALFORMED_BODY, "Malformed request body"), headers,
+				status, request);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
+			HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex,
+				Problems.of(ProblemType.MALFORMED_PARAMETER, "Malformed value in request path or parameter"), headers,
+				status, request);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex,
+				Problems.of(ProblemType.CONTENT_TOO_LARGE, "Uploaded file exceeds the size limit"), headers, status,
+				request);
+	}
+
+	// --- our own exceptions ---
+
+	@ExceptionHandler(ApiException.class)
+	ProblemDetail apiException(ApiException e) {
+		return Problems.of(e.type(), e.getMessage());
 	}
 
 	// Unique constraints are the last line of defence against races (two registrations of
 	// the same email in the same millisecond). Generic message: the constraint name says
 	// nothing a client should learn.
 	@ExceptionHandler(DataIntegrityViolationException.class)
-	ResponseEntity<ApiError> constraintViolation(DataIntegrityViolationException e) {
-		return error(HttpStatus.CONFLICT, "Resource already exists");
+	ProblemDetail constraintViolation(DataIntegrityViolationException e) {
+		return Problems.of(ProblemType.ALREADY_EXISTS, "Resource already exists");
 	}
 
-	@ExceptionHandler({ IllegalArgumentException.class, MethodArgumentTypeMismatchException.class })
-	ResponseEntity<ApiError> badRequest(Exception e) {
-		String message = e instanceof MethodArgumentTypeMismatchException
-				? "Malformed value in request path or parameter" : e.getMessage();
-		return error(HttpStatus.BAD_REQUEST, message);
+	@ExceptionHandler(IllegalArgumentException.class)
+	ProblemDetail illegalArgument(IllegalArgumentException e) {
+		return Problems.of(ProblemType.MALFORMED_PARAMETER, e.getMessage());
 	}
 
-	// Broken JSON or a value the type cannot take (an unknown tier, a word where a number
-	// goes). The parser's message names internal classes, so it stays server-side.
-	@ExceptionHandler(HttpMessageNotReadableException.class)
-	ResponseEntity<ApiError> unreadableBody(HttpMessageNotReadableException e) {
-		return error(HttpStatus.BAD_REQUEST, "Malformed request body");
+	// --- authentication: from the login controller and from the security chain ---
+
+	// No token at all. The chain's entry point delegates here.
+	@ExceptionHandler(InsufficientAuthenticationException.class)
+	ResponseEntity<ProblemDetail> noToken(InsufficientAuthenticationException e) {
+		return bearerChallenge(Problems.of(ProblemType.AUTHENTICATION_REQUIRED, "Authentication required"));
 	}
 
-	@ExceptionHandler(MaxUploadSizeExceededException.class)
-	ResponseEntity<ApiError> tooLarge(MaxUploadSizeExceededException e) {
-		return error(HttpStatus.PAYLOAD_TOO_LARGE, "Uploaded file exceeds the size limit");
+	// Token present but rejected by the decoder: malformed, bad signature, expired.
+	@ExceptionHandler(InvalidBearerTokenException.class)
+	ResponseEntity<ProblemDetail> invalidToken(InvalidBearerTokenException e) {
+		return bearerChallenge(Problems.of(ProblemType.INVALID_TOKEN, "Invalid or expired token"));
 	}
 
-	// Login failures do reach the advice: the controller calls the manager itself.
-	// One message for unknown email and wrong password, no account enumeration.
+	// Login failures reach the advice directly: the controller calls the manager itself.
+	// One detail for unknown email and wrong password, no account enumeration.
 	@ExceptionHandler(AuthenticationException.class)
-	ResponseEntity<ApiError> unauthorized(AuthenticationException e) {
-		return error(HttpStatus.UNAUTHORIZED, "Invalid email or password");
-	}
-
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	ResponseEntity<ApiError> invalidBody(MethodArgumentNotValidException e) {
-		String message = e.getBindingResult()
-			.getFieldErrors()
-			.stream()
-			.map(f -> f.getField() + " " + f.getDefaultMessage())
-			.sorted()
-			.collect(Collectors.joining(", "));
-		return error(HttpStatus.BAD_REQUEST, message);
+	ProblemDetail badCredentials(AuthenticationException e) {
+		return Problems.of(ProblemType.BAD_CREDENTIALS, "Invalid email or password");
 	}
 
 	// Catch-all: log the details server-side, never leak internals to the client (OWASP).
+	// about:blank on purpose: the status is all the client is told.
 	@ExceptionHandler(Exception.class)
-	ResponseEntity<ApiError> unexpected(Exception e) {
+	ProblemDetail unexpected(Exception e) {
 		log.error("Unhandled exception", e);
-		return error(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+		return Problems
+			.decorate(ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error"));
 	}
 
-	private ResponseEntity<ApiError> error(HttpStatus status, String message) {
-		return ResponseEntity.status(status).body(new ApiError(status.value(), status.getReasonPhrase(), message));
+	// RFC 6750: a 401 names the scheme the client should use.
+	private ResponseEntity<ProblemDetail> bearerChallenge(ProblemDetail problem) {
+		return ResponseEntity.status(problem.getStatus()).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer").body(problem);
 	}
 
 }

@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -59,7 +58,8 @@ public class CompanyApiIntegrationTest extends AbstractIntegrationTest {
 			.content("{\"name\":\"  \",\"tier\":\"SMALL\"}")
 			.with(bearer(ALICE)))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message", startsWith("name ")));
+			.andExpect(jsonPath("$.detail", is("Validation failed")))
+			.andExpect(jsonPath("$.errors[0].field", is("name")));
 	}
 
 	@Test
@@ -68,7 +68,7 @@ public class CompanyApiIntegrationTest extends AbstractIntegrationTest {
 			.content("{\"name\":\"Hooli\",\"tier\":\"HUGE\"}")
 			.with(bearer(ALICE)))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message", is("Malformed request body")));
+			.andExpect(jsonPath("$.detail", is("Malformed request body")));
 	}
 
 }

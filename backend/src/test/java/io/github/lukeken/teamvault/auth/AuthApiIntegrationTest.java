@@ -63,7 +63,7 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
 			.content(registerBody("DAVE@example.com", NEW_PASSWORD, "Dave again")))
 			.andExpect(status().isConflict())
-			.andExpect(jsonPath("$.message", is("Email already registered")));
+			.andExpect(jsonPath("$.detail", is("Email already registered")));
 	}
 
 	@Test
@@ -71,7 +71,8 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
 			.content(registerBody("erin@example.com", "short", "Erin")))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message", startsWith("password ")));
+			.andExpect(jsonPath("$.detail", is("Validation failed")))
+			.andExpect(jsonPath("$.errors[0].field", is("password")));
 	}
 
 	@Test
@@ -94,8 +95,9 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 			.getResponse()
 			.getContentAsString();
 
-		// No account enumeration through login: byte-identical answers.
-		assertThat(wrongPassword).isEqualTo(unknownEmail);
+		// No account enumeration through login: identical answers once the per-request id
+		// is out.
+		assertThat(withoutRequestId(wrongPassword)).isEqualTo(withoutRequestId(unknownEmail));
 	}
 
 	@Test
@@ -125,6 +127,10 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 
 	private static String loginBody(String email, String password) {
 		return "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}";
+	}
+
+	private static String withoutRequestId(String body) {
+		return body.replaceAll(",?\"requestId\":\"[^\"]*\"", "");
 	}
 
 }

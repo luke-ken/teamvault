@@ -43,7 +43,7 @@ public class MembershipApiIntegrationTest extends AbstractIntegrationTest {
 			.content("{\"email\":\"" + BOB + "\"}")
 			.header(HttpHeaders.AUTHORIZATION, "Bearer " + ginaToken))
 			.andExpect(status().isForbidden())
-			.andExpect(jsonPath("$.message", is("Requires the ADMIN role in this company")));
+			.andExpect(jsonPath("$.detail", is("Requires the ADMIN role in this company")));
 
 		// A member may list, a non-member may not even see the list.
 		mvc.perform(get("/api/companies/" + ACME + "/members").header(HttpHeaders.AUTHORIZATION, "Bearer " + ginaToken))
@@ -76,7 +76,7 @@ public class MembershipApiIntegrationTest extends AbstractIntegrationTest {
 			.content("{\"email\":\"" + ALICE + "\"}")
 			.with(bearer(ALICE)))
 			.andExpect(status().isForbidden())
-			.andExpect(jsonPath("$.message", is("Not a member of this company")));
+			.andExpect(jsonPath("$.detail", is("Not a member of this company")));
 	}
 
 	private void register(String email, String password, String displayName) throws Exception {
