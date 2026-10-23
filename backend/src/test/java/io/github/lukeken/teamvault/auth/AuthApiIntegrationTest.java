@@ -120,6 +120,16 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 			.andExpect(jsonPath("$.status", is("UP")));
 	}
 
+	@Test
+	void me_returnsTheCallerFromTheToken() throws Exception {
+		mvc.perform(get("/api/me").with(bearer(ALICE)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id", is("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")))
+			.andExpect(jsonPath("$.email", is(ALICE)))
+			.andExpect(jsonPath("$.displayName", is("Alice Admin")))
+			.andExpect(jsonPath("$.passwordHash").doesNotExist());
+	}
+
 	private static String registerBody(String email, String password, String displayName) {
 		return "{\"email\":\"" + email + "\",\"password\":\"" + password + "\",\"displayName\":\"" + displayName
 				+ "\"}";
