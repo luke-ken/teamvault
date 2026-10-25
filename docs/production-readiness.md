@@ -46,7 +46,7 @@ cheap to run, not what makes them possible.
 | Registration input rules, validation errors as 400 with field list | built | Password 8 to 72 (bcrypt limit), email lower-cased on write and lookup |
 | Dependency update automation | built | Dependabot for Maven, weekly, grouped; the github-actions entry joins with the first workflow in Sprint 3 |
 | Access token in memory, refresh token rotation in an httpOnly cookie | sprint 3 | ADR-004 revisit trigger 1: a 15-minute token is unusable behind a UI without renewal |
-| Swagger UI off outside the dev profile | sprint 2 | The contract is public, the UI is a dev tool |
+| Swagger UI off outside the dev profile | built | ADR-006: `/v3/api-docs` public in every profile, the UI only under `dev`, both positions tested |
 | Security headers and TLS termination at the proxy | sprint 3 | nginx in front; TLS at the ingress, never in the container |
 | Container image scanning in CI | sprint 3 | Trivy on the two images |
 | Rate limiting on login and registration | sprint 4 | Redis-backed; bcrypt cost is also the denial-of-service lever |
@@ -74,7 +74,7 @@ cheap to run, not what makes them possible.
 | One error shape for every failure path, including the 401 from the filter chain | built | The entry point delegates to the MVC resolver; the advice is the one writer |
 | Problem Details (RFC 9457) instead of the custom error record | built | ADR-005; `type` is an anchor into `docs/errors.md`, the advice extends `ResponseEntityExceptionHandler` |
 | Request id in the error body and in the log line | built | `RequestIdFilter` ahead of the security chain, `X-Request-Id` on every response, `requestId` in every problem body |
-| OpenAPI document generated from the controllers | sprint 2 | With the bearer scheme declared |
+| OpenAPI document generated from the controllers | built | springdoc 3.x, bearer scheme global, Problem Details on every error response, exported to `docs/openapi.yaml` by the test suite |
 | Frontend client generated from the OpenAPI document | sprint 3 | Hand-mirrored schemas drift at runtime, generated types drift at build time |
 | API versioning | named | Path or media type; one client today, no version needed |
 

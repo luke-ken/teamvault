@@ -41,8 +41,7 @@ public class OpenApiConfig {
 				.version("0.1.0")
 				.description("Multi-tenant file vault. Errors follow RFC 9457, see docs/errors.md."))
 			// Fixed on purpose: otherwise the exported document carries the host of
-			// whoever
-			// generated it (MockMvc says http://localhost).
+			// whoever generated it (MockMvc says http://localhost).
 			.servers(List.of(new Server().url("http://localhost:8080").description("local dev")))
 			.components(new Components().addSecuritySchemes(BEARER,
 					new SecurityScheme().type(SecurityScheme.Type.HTTP)
@@ -56,8 +55,7 @@ public class OpenApiConfig {
 
 	// Error responses are produced by the advice, not by the controllers, so springdoc
 	// cannot infer them. Declared once here: one schema, a default error on every
-	// operation,
-	// 401 on the secured ones.
+	// operation, 401 on the secured ones.
 	@Bean
 	OpenApiCustomizer problemDetailResponses() {
 		return openApi -> {

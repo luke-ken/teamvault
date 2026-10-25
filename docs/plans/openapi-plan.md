@@ -47,7 +47,7 @@ each step.
    `ProblemDetail` type on its own.
 5. **Stable export.** `springdoc.writer-with-order-by-keys: true` so two runs produce the same
    file and the diff shows only real changes. YAML, not JSON: smaller diffs.
-6. **`GET /api/me`.** `user/MeController` with `user/UserService.me(UUID)`: the caller's row by
+6. **`GET /api/me`.** `user/UserController` with `user/UserService.me(UUID)`: the caller's row by
    the token subject, as `UserResponse` ({id, email, displayName}). A valid token whose user is
    gone is a 403 "Caller no longer exists", the precedent from `CompanyService`. Outside
    `/api/auth/**` on purpose: it is a protected resource, not part of login.
@@ -57,7 +57,7 @@ each step.
 ## Build order
 
 ### Endpoint (independent of springdoc)
-1. `user/UserService`, `user/MeController`. Test in `AuthApiIntegrationTest`: `me_returnsTheCallerFromTheToken`
+1. `user/UserService`, `user/UserController`. Test in `AuthApiIntegrationTest`: `me_returnsTheCallerFromTheToken`
    (id equals the token subject, email alice, displayName present).
    Commit: `feat: GET /api/me returns the caller`.
 

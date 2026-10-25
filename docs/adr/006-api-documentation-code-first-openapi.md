@@ -1,7 +1,7 @@
 # ADR-006: API documentation as a code-first OpenAPI document, committed, UI in dev only
 
 - **Date:** 2026-10-23
-- **Status:** proposed
+- **Status:** accepted (2026-10-25)
 
 ## Context
 The frontend arrives in Sprint 3 and needs to know the API: paths, bodies, the bearer scheme,

@@ -2,6 +2,25 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-25 – S2·Session 4 complete, Part 1 done – OpenAPI end to end. ADR-006 (code-first
+  with springdoc 3.1.1, document exported by a test and committed, UI in dev only; accepted).
+  `GET /api/me` in a new `UserController` (first endpoint built with the document in view).
+  `OpenApiConfig`: info, fixed server, bearer scheme as a global requirement cleared on the two
+  public controllers with an empty `@SecurityRequirements`, and a customizer that declares the
+  `ProblemDetail` schema with `requestId` and `errors` plus a `default` problem response on every
+  operation and a `401` on the secured ones (springdoc adds nothing for the advice on its own).
+  First look at the generated document found four coarse spots, all fixed in code, no `@Schema`:
+  colliding operation ids (`get_1`, `list_1`) by renaming the controller methods, class-name tags
+  by one `@Tag` per controller, `*/*` success bodies by `default-produces-media-type`, and the
+  upload documented as JSON by `consumes = multipart/form-data` (download keeps `*/*` on purpose).
+  `application-dev.yaml` is the first profile in main; run command gained `-Dspring-boot.run.profiles=dev`.
+  Tests: `OpenApiDocumentTest` (public, bearer, `/api/**` only, 401 on secured and not on public,
+  schema members, UI 404 under `test`, export of `docs/openapi.yaml`; two runs give one file thanks
+  to `writer-with-order-by-keys`) and `SwaggerUiEnabledTest` (own context, the switch in the on
+  position). `backend/http/teamvault.http`: the README flow plus nine error cases. 38/38 green,
+  four commits plus docs. README: run command, Swagger note, contract paragraph, `/api/me` row.
+  Ladder: two rows to built. **Next:** Session 5 (T) test pyramid and test doubles, then Session 6
+  Mockito unit tests for `MembershipGuard`, `AuthService`, `CompanyService`.
 - 2026-10-22 – S2·Session 2 complete – Error contract switched. `ApiExceptionHandler` now
   extends `ResponseEntityExceptionHandler`: four overrides where Spring owns the mapping
   (validation with a sorted `errors` list, unreadable body, type mismatch, upload size), one

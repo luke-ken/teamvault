@@ -28,8 +28,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/auth/**")
 				.permitAll()
 				// ADR-006: the document is public in every profile; the UI paths are open
-				// too,
-				// so a disabled UI answers 404 through the advice and not 401.
+				// too, so a disabled UI answers 404 through the advice and not 401.
 				.requestMatchers("/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**", "/swagger-ui.html",
 						"/swagger-ui/**")
 				.permitAll()
