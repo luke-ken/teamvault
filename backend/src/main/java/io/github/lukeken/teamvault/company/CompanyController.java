@@ -1,6 +1,7 @@
 package io.github.lukeken.teamvault.company;
 
 import io.github.lukeken.teamvault.auth.Caller;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/companies")
+@Tag(name = "companies")
 public class CompanyController {
 
 	private final CompanyService companyService;
@@ -28,18 +30,18 @@ public class CompanyController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public CompanyResponse create(@AuthenticationPrincipal Jwt caller,
+	public CompanyResponse createCompany(@AuthenticationPrincipal Jwt caller,
 			@Valid @RequestBody CreateCompanyRequest request) {
 		return companyService.create(Caller.id(caller), request);
 	}
 
 	@GetMapping
-	public List<CompanyResponse> mine(@AuthenticationPrincipal Jwt caller) {
+	public List<CompanyResponse> listMyCompanies(@AuthenticationPrincipal Jwt caller) {
 		return companyService.mine(Caller.id(caller));
 	}
 
 	@GetMapping("/{companyId}")
-	public CompanyResponse get(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
+	public CompanyResponse getCompany(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
 		return companyService.get(Caller.id(caller), companyId);
 	}
 

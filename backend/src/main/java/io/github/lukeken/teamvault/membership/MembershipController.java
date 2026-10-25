@@ -1,6 +1,7 @@
 package io.github.lukeken.teamvault.membership;
 
 import io.github.lukeken.teamvault.auth.Caller;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/companies/{companyId}/members")
+@Tag(name = "members")
 public class MembershipController {
 
 	private final MembershipService membershipService;
@@ -28,13 +30,13 @@ public class MembershipController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public MemberResponse add(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
+	public MemberResponse addMember(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@Valid @RequestBody AddMemberRequest request) {
 		return membershipService.add(Caller.id(caller), companyId, request);
 	}
 
 	@GetMapping
-	public List<MemberResponse> list(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
+	public List<MemberResponse> listMembers(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
 		return membershipService.list(Caller.id(caller), companyId);
 	}
 

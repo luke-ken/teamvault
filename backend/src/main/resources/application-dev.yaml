@@ -1,0 +1,5 @@
+# Developer conveniences only. Activate with:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+springdoc:
+  swagger-ui:
+    enabled: true

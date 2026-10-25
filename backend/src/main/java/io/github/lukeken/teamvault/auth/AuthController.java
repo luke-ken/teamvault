@@ -2,6 +2,8 @@ package io.github.lukeken.teamvault.auth;
 
 import io.github.lukeken.teamvault.user.AuthenticatedUser;
 import io.github.lukeken.teamvault.user.UserResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@SecurityRequirements // public: clears the global bearer requirement for this controller
+@Tag(name = "auth")
 public class AuthController {
 
 	private final AuthService authService;

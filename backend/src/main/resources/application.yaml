@@ -29,6 +29,19 @@ teamvault:
     secret: ${TEAMVAULT_JWT_SECRET:}
     ttl: 15m
 
+springdoc:
+  api-docs:
+    version: openapi_3_1
+  # Boot's error controller and the actuator are not part of the API.
+  paths-to-match: /api/**
+  # Controllers return records, so JSON is the truth; without this the document says */*.
+  default-produces-media-type: application/json
+  # Two runs, one file: the export test commits the document, diffs must show real changes.
+  writer-with-order-by-keys: true
+  swagger-ui:
+    # The document is public, the UI is a dev tool (ADR-006). On in application-dev.yaml.
+    enabled: false
+
 management:
   endpoints:
     web:

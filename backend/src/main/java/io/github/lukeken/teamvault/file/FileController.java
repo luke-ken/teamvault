@@ -1,6 +1,7 @@
 package io.github.lukeken.teamvault.file;
 
 import io.github.lukeken.teamvault.auth.Caller;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/companies/{companyId}/files")
+@Tag(name = "files")
 public class FileController {
 
 	private final FileService fileService;
@@ -32,26 +34,27 @@ public class FileController {
 		this.fileService = fileService;
 	}
 
-	@PostMapping
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
-	public FileResponse upload(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
+	public FileResponse uploadFile(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@RequestParam("file") MultipartFile file) {
 		return fileService.upload(Caller.id(caller), companyId, file);
 	}
 
 	@GetMapping
-	public List<FileResponse> list(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
+	public List<FileResponse> listFiles(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId) {
 		return fileService.list(Caller.id(caller), companyId);
 	}
 
 	@GetMapping("/{fileId}")
-	public FileResponse get(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
+	public FileResponse getFile(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@PathVariable UUID fileId) {
 		return fileService.get(Caller.id(caller), companyId, fileId);
 	}
 
-	@GetMapping("/{fileId}/download")
-	public ResponseEntity<Resource> download(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
+	// The content type is the file's own, so the document must not claim JSON here.
+	@GetMapping(value = "/{fileId}/download", produces = MediaType.ALL_VALUE)
+	public ResponseEntity<Resource> downloadFile(@AuthenticationPrincipal Jwt caller, @PathVariable UUID companyId,
 			@PathVariable UUID fileId) {
 		FileService.Download download = fileService.download(Caller.id(caller), companyId, fileId);
 		return ResponseEntity.ok()
