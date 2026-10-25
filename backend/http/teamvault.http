@@ -1,0 +1,129 @@
+# TeamVault, the README flow as requests. Run top to bottom in the IntelliJ HTTP client;
+# the login and create requests store what later requests need. Needs the app on 8080
+# (./mvnw spring-boot:run -Dspring-boot.run.profiles=dev) and the dev seed (devpass12).
+
+@host = http://localhost:8080
+@acme = 11111111-1111-1111-1111-111111111111
+@globex = 22222222-2222-2222-2222-222222222222
+
+### ping (public)
+GET {{host}}/api/ping
+
+### register carol (201, no token: tokens come from login only; run twice for the 409)
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{"email": "carol@example.com", "password": "correct-horse-battery", "displayName": "Carol"}
+
+### login as carol, keep the token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "carol@example.com", "password": "correct-horse-battery"}
+
+> {% client.global.set("carol", response.body.token); %}
+
+### who am I
+GET {{host}}/api/me
+Authorization: Bearer {{carol}}
+
+### found Initech: the creator becomes its first ADMIN, keep the id
+POST {{host}}/api/companies
+Authorization: Bearer {{carol}}
+Content-Type: application/json
+
+{"name": "Initech", "tier": "SMALL"}
+
+> {% client.global.set("initech", response.body.id); %}
+
+### add bob as MEMBER (ADMIN only)
+POST {{host}}/api/companies/{{initech}}/members
+  Authorization: Bearer {{carol}}
+  Content-Type: application/json
+
+{"email": "bob@globex.example"}
+
+### Initech members
+GET {{host}}/api/companies/{{initech}}/members
+Authorization: Bearer {{carol}}
+
+### login as alice (Acme ADMIN), keep the token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "alice@acme.example", "password": "devpass12"}
+
+> {% client.global.set("alice", response.body.token); %}
+
+### upload into Acme (run twice for the 409 duplicate filename)
+POST {{host}}/api/companies/{{acme}}/files
+Authorization: Bearer {{alice}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="hello.txt"
+Content-Type: text/plain
+
+Hello from the HTTP client
+--WebAppBoundary--
+
+### list Acme files, newest first
+GET {{host}}/api/companies/{{acme}}/files
+  Authorization: Bearer {{alice}}
+
+### alice's companies with her role in each
+GET {{host}}/api/companies
+Authorization: Bearer {{alice}}
+
+### login as bob (Globex MEMBER, Initech MEMBER), keep the token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"email": "bob@globex.example", "password": "devpass12"}
+
+> {% client.global.set("bob", response.body.token); %}
+
+### error: no token, 401 authentication-required with WWW-Authenticate: Bearer
+GET {{host}}/api/companies/{{acme}}/files
+
+### error: garbage token, 401 invalid-token
+GET {{host}}/api/companies/{{acme}}/files
+Authorization: Bearer not.a.jwt
+
+### error: bob is not an Acme member, 403 membership-required
+GET {{host}}/api/companies/{{acme}}/files
+Authorization: Bearer {{bob}}
+
+### error: bob is MEMBER at Initech, adding someone needs ADMIN, 403 admin-role-required
+POST {{host}}/api/companies/{{initech}}/members
+Authorization: Bearer {{bob}}
+Content-Type: application/json
+
+{"email": "alice@acme.example"}
+
+### error: wrong password, 401 bad-credentials (same body as an unknown email)
+POST {{host}}/api/auth/login
+  Content-Type: application/json
+
+{"email": "alice@acme.example", "password": "nope"}
+
+### error: blank name, 400 validation-failed with the errors list
+POST {{host}}/api/companies
+Authorization: Bearer {{alice}}
+Content-Type: application/json
+
+{"name": "  ", "tier": "SMALL"}
+
+### error: unknown tier, 400 malformed-body
+POST {{host}}/api/companies
+Authorization: Bearer {{alice}}
+Content-Type: application/json
+
+{"name": "Hooli", "tier": "HUGE"}
+
+### error: unknown route with a valid token, 404 without type (about:blank)
+GET {{host}}/api/nope
+Authorization: Bearer {{alice}}
+
+### the contract (public in every profile); the UI is at /swagger-ui.html in dev only
+GET {{host}}/v3/api-docs.yaml
