@@ -2,6 +2,18 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-25 – S2·Session 6 complete – The unit rung. Four Mockito test classes, no Spring
+  context: `MembershipGuardTest` (non-member and non-admin both get the neutral membership
+  error, admin passes), `AuthServiceTest` (email stripped and lower-cased before lookup and
+  save, duplicate stops before hashing, stored hash is the encoder's output, login hands the
+  principal to the token service and issues nothing on rejection), `CompanyServiceTest`
+  (company and ADMIN membership saved for the same caller and company object, missing caller
+  is 403 with nothing saved), `MembershipServiceTest` (duplicate check runs with the found
+  user's id, not the caller's; guard failure means no repository call at all). Tools drilled:
+  `ArgumentCaptor` on one- and two-argument calls with `eq` on the other position, `thenAnswer`
+  returning the saved entity, strict stubs, `verifyNoInteractions`, `ReflectionTestUtils` for a
+  generated id. 56/56 (18 unit, 4 slice, 34 full). README names the three rungs and the
+  `method_condition_result` naming. **Next:** Session 7 (T), OWASP Top 10 against the code.
 - 2026-10-25 – S2·Session 4 complete, Part 1 done – OpenAPI end to end. ADR-006 (code-first
   with springdoc 3.1.1, document exported by a test and committed, UI in dev only; accepted).
   `GET /api/me` in a new `UserController` (first endpoint built with the document in view).

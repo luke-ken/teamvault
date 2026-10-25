@@ -103,6 +103,7 @@ cheap to run, not what makes them possible.
 | Multi-stage images, non-root, no privileged port inside the container | sprint 3 | JRE-only runtime, unprivileged nginx |
 | Compose stack with one command | sprint 3 | Secret exported first, never defaulted |
 | CI: lint, test with Testcontainers, build images | sprint 3 | GitHub Actions |
+| Unit tests under the integration suite | built | Mockito, no context: guard and the three services, decision logic proven without Postgres; README names the three rungs |
 | Deployment with a public URL and TLS | sprint 3 | |
 | Formatter enforced by the build | built (backend) | Spring Java Format at the validate phase; Prettier and a linter on the frontend from its first commit in Sprint 3 |
 
