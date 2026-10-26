@@ -17,8 +17,8 @@ them into nine steps and names the arrows each step covers.
 
 ![One secured request, end to end](01-secured-request-add-member.svg)
 
-Full size: [open the raw SVG](01-secured-request-add-member.svg?raw=true), which fills the
-window and zooms with the browser. GitHub's own file viewer only shows it scaled to fit.
+Full size: [open the raw SVG](https://raw.githubusercontent.com/luke-ken/teamvault/main/docs/walkthroughs/01-secured-request-add-member.svg),
+which zooms with the browser. GitHub's own file viewer only shows it scaled to fit.
 
 <details>
 <summary>Mermaid source (editable mirror of the diagram, re-render the SVG after a change)</summary>

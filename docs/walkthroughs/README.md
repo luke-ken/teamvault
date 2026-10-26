@@ -13,12 +13,5 @@ browser zoom. The Mermaid source sits folded under the picture as the editable m
 the SVG is re-rendered from it after a change:
 
 ```bash
-npx -y @mermaid-js/mermaid-cli@11.4.2 -i <diagram>.mmd -o <page>.svg -b white
-# the tool writes width="100%", which stops browser zoom from enlarging the picture;
-# give the root element the pixel size of its viewBox instead (the sed is for macOS):
-w=$(grep -o 'viewBox="[^"]*"' <page>.svg | head -1 | awk -F'[" ]' '{print $4}')
-h=$(grep -o 'viewBox="[^"]*"' <page>.svg | head -1 | awk -F'[" ]' '{print $5}')
-sed -i '' -e "s/ width=\"100%\"/ width=\"$w\" height=\"$h\"/" -e 's/max-width: [0-9.]*px; //' <page>.svg
+docs/walkthroughs/render.sh docs/walkthroughs/<page>.md
 ```
-
-where `<diagram>.mmd` is the fenced `mermaid` block copied out of the page.
