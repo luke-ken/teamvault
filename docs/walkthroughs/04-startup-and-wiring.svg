@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" style="background-color: white;">
+  <title>TeamVault startup and wiring: classpath, configuration and our declarations become one application context</title>
+  <style>
+    .grey  { fill: rgba(139,148,158,0.14); stroke: #57606a; stroke-width: 1.2; }
+    .blue  { fill: rgba(56,139,253,0.14); stroke: #2b5fae; stroke-width: 1.2; }
+    .green { fill: rgba(46,160,67,0.14); stroke: #2e8b47; stroke-width: 1.2; }
+    .frame { fill: none; stroke: #1c232e; stroke-width: 1.4; }
+    .title { font-size: 13px; font-weight: 700; fill: #1c232e; }
+    .col   { font-size: 11.5px; fill: #1c232e; }
+    .lbl   { font-size: 12px; fill: #57606a; }
+    .lblb  { font-size: 12px; font-weight: 700; fill: #2b5fae; }
+    .lblg  { font-size: 12px; font-weight: 700; fill: #2e8b47; }
+    .edge  { stroke: #1c232e; stroke-width: 1.4; fill: none; }
+  </style>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1c232e"/></marker></defs>
+  <rect x="0" y="0" width="1200" height="900" fill="white"/>
+    <rect class="grey" x="20" y="20" width="370" height="186" rx="6"/>
+  <text class="title" x="32" y="41">1. Classpath (pom.xml)</text>
+  <text class="col" x="32" y="63">web MVC, Security, OAuth2 resource server,</text>
+  <text class="col" x="32" y="79">Data JPA, Flyway, Validation, Actuator,</text>
+  <text class="col" x="32" y="95">springdoc-openapi-starter-webmvc-ui</text>
+  <text class="col" x="32" y="111">runtime: postgresql driver</text>
+  <text class="col" x="32" y="127">runtime, optional: docker-compose, devtools</text>
+  <text class="col" x="32" y="143">test: Testcontainers, the *-test starters</text>
+  <text class="col" x="32" y="159">Each starter carries an auto-configuration</text>
+  <text class="col" x="32" y="175">that switches on when its classes are present.</text>
+  <text class="col" x="32" y="191">The pom chooses, Boot assembles.</text>
+  <rect class="grey" x="415" y="20" width="370" height="186" rx="6"/>
+  <text class="title" x="427" y="41">2. Configuration</text>
+  <text class="col" x="427" y="63">application.yaml: no datasource URL,</text>
+  <text class="col" x="427" y="79">  ddl-auto validate, open-in-view false,</text>
+  <text class="col" x="427" y="95">  multipart 25 MB, health only, springdoc</text>
+  <text class="col" x="427" y="111">  log pattern [%X{requestId}]</text>
+  <text class="col" x="427" y="127">import optional .env: TEAMVAULT_JWT_SECRET</text>
+  <text class="col" x="427" y="143">profile dev (application-dev.yaml):</text>
+  <text class="col" x="427" y="159">  Swagger UI on</text>
+  <text class="col" x="427" y="175">profile test (src/test/resources):</text>
+  <text class="col" x="427" y="191">  fixed JWT secret, never the shell's</text>
+  <rect class="green" x="810" y="20" width="370" height="186" rx="6"/>
+  <text class="title" x="822" y="41">3. Our declarations</text>
+  <text class="col" x="822" y="63">@SpringBootApplication</text>
+  <text class="col" x="822" y="79">@ConfigurationPropertiesScan -&gt; JwtProperties</text>
+  <text class="col" x="822" y="95">  (secret &gt;= 32 chars, validated at bind)</text>
+  <text class="col" x="822" y="111">SecurityConfig, JwtConfig,</text>
+  <text class="col" x="822" y="127">AuthenticationConfig, OpenApiConfig</text>
+  <text class="col" x="822" y="143">16 components: 6 controllers, 5 services,</text>
+  <text class="col" x="822" y="159">  guard, storage, entry point, user details,</text>
+  <text class="col" x="822" y="175">  token service; 1 advice, 1 filter</text>
+  <text class="col" x="822" y="191">db/migration: V1__init.sql, V2__seed.sql</text>
+  <line class="edge" x1="205" y1="206" x2="205" y2="236" marker-end="url(#arr)"/>
+  <line class="edge" x1="600" y1="206" x2="600" y2="236" marker-end="url(#arr)"/>
+  <line class="edge" x1="995" y1="206" x2="995" y2="236" marker-end="url(#arr)"/>
+  <rect class="frame" x="20" y="240" width="1160" height="420" rx="8"/>
+  <text class="title" x="32" y="260" text-anchor="start">The application context at startup: left what Boot assembles from 1 and 2, right what we added from 3</text>
+  <text class="lblb" x="32" y="280" text-anchor="start">Spring, auto-configured</text>
+  <text class="lblg" x="700" y="280" text-anchor="start">TeamVault, declared</text>
+  <rect class="blue" x="32" y="292" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="310">Tomcat on :8080, DispatcherServlet, Jackson, Hibernate Validator</text>
+  <rect class="green" x="700" y="292" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="310">6 controllers, request records with constraints</text>
+  <line class="edge" x1="686" y1="314.0" x2="696" y2="314.0"/>
+  <rect class="blue" x="32" y="338" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="356">HandlerExceptionResolver chain, ResponseEntityExceptionHandler base class</text>
+  <rect class="green" x="700" y="338" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="356">ApiExceptionHandler (advice), RequestIdFilter (first in line)</text>
+  <line class="edge" x1="686" y1="360.0" x2="696" y2="360.0"/>
+  <rect class="blue" x="32" y="384" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="402">FilterChainProxy, BearerTokenAuthenticationFilter, JwtAuthenticationProvider,</text>
+  <text class="col" x="42" y="417">AuthorizationFilter, ExceptionTranslationFilter</text>
+  <rect class="green" x="700" y="384" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="402">SecurityFilterChain bean (SecurityConfig),</text>
+  <text class="col" x="710" y="417">JwtDecoder (JwtConfig), JsonAuthenticationEntryPoint</text>
+  <line class="edge" x1="686" y1="406.0" x2="696" y2="406.0"/>
+  <rect class="blue" x="32" y="430" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="448">ProviderManager, DaoAuthenticationProvider, BCryptPasswordEncoder</text>
+  <rect class="green" x="700" y="430" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="448">AuthenticationManager and PasswordEncoder beans,</text>
+  <text class="col" x="710" y="463">AppUserDetailsService, TokenService, JwtEncoder, JwtProperties</text>
+  <line class="edge" x1="686" y1="452.0" x2="696" y2="452.0"/>
+  <rect class="blue" x="32" y="476" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="494">DataSource (HikariCP) from connection details: see below, no URL in yaml</text>
+  <rect class="green" x="700" y="476" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="494">nothing: the environment decides where Postgres is</text>
+  <line class="edge" x1="686" y1="498.0" x2="696" y2="498.0"/>
+  <rect class="blue" x="32" y="522" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="540">Flyway migrate V1, V2 at startup; then Hibernate validates the schema;</text>
+  <text class="col" x="42" y="555">Spring Data turns 4 repository interfaces into beans</text>
+  <rect class="green" x="700" y="522" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="540">4 entities, 4 repository interfaces, the two migrations,</text>
+  <text class="col" x="710" y="555">MembershipGuard and the 5 services on top</text>
+  <line class="edge" x1="686" y1="544.0" x2="696" y2="544.0"/>
+  <rect class="blue" x="32" y="568" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="586">Actuator: /actuator/health, liveness and readiness groups</text>
+  <rect class="green" x="700" y="568" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="586">management.* in yaml only, health is public in SecurityConfig</text>
+  <line class="edge" x1="686" y1="590.0" x2="696" y2="590.0"/>
+  <rect class="blue" x="32" y="614" width="650" height="44" rx="4"/>
+  <text class="col" x="42" y="632">springdoc: /v3/api-docs, Swagger UI only when the dev profile is on</text>
+  <rect class="green" x="700" y="614" width="468" height="44" rx="4"/>
+  <text class="col" x="710" y="632">OpenAPI bean and customizer (OpenApiConfig),</text>
+  <text class="col" x="710" y="647">@Tag and @SecurityRequirements on the controllers</text>
+  <line class="edge" x1="686" y1="636.0" x2="696" y2="636.0"/>
+  <text class="title" x="225" y="684" text-anchor="start">Connection details, by environment</text>
+  <rect class="grey" x="20" y="694" width="370" height="150" rx="6"/>
+  <text class="title" x="32" y="715">Local run</text>
+  <text class="col" x="32" y="737">./mvnw spring-boot:run</text>
+  <text class="col" x="32" y="753">  -Dspring-boot.run.profiles=dev</text>
+  <text class="col" x="32" y="769">spring-boot-docker-compose reads compose.yaml,</text>
+  <text class="col" x="32" y="785">starts postgres:18, injects host, port, user,</text>
+  <text class="col" x="32" y="801">password as connection details, stops it</text>
+  <text class="col" x="32" y="817">with the app. Flyway seeds alice and bob.</text>
+  <rect class="grey" x="415" y="694" width="370" height="150" rx="6"/>
+  <text class="title" x="427" y="715">Tests (./mvnw test)</text>
+  <text class="col" x="427" y="737">@SpringBootTest with TestcontainersConfiguration:</text>
+  <text class="col" x="427" y="753">a PostgreSQLContainer postgres:18 bean marked</text>
+  <text class="col" x="427" y="769">@ServiceConnection does the same injection.</text>
+  <text class="col" x="427" y="785">Profile test, 33 tests share one context,</text>
+  <text class="col" x="427" y="801">storage dir via @DynamicPropertySource,</text>
+  <text class="col" x="427" y="817">Ryuk removes the container afterwards.</text>
+  <rect class="grey" x="810" y="694" width="370" height="150" rx="6"/>
+  <text class="title" x="822" y="715">Later: container image, cloud</text>
+  <text class="col" x="822" y="737">SPRING_DATASOURCE_URL, _USERNAME, _PASSWORD</text>
+  <text class="col" x="822" y="753">and TEAMVAULT_JWT_SECRET as environment</text>
+  <text class="col" x="822" y="769">variables. Same yaml, same image, nothing</text>
+  <text class="col" x="822" y="785">rebuilt. The docker-compose starter is</text>
+  <text class="col" x="822" y="801">optional and absent from the image's</text>
+  <text class="col" x="822" y="817">runtime (Sprint 3).</text>
+  <line class="edge" x1="205" y1="694" x2="205" y2="662" marker-end="url(#arr)"/>
+  <line class="edge" x1="600" y1="694" x2="600" y2="662" marker-end="url(#arr)"/>
+  <line class="edge" x1="995" y1="694" x2="995" y2="662" marker-end="url(#arr)"/>
+</svg>
