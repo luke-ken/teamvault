@@ -15,6 +15,14 @@ blue is Spring and its libraries doing work we only configured, green is code in
 repository, grey is infrastructure. The arrows are numbered; the narrative below groups
 them into nine steps and names the arrows each step covers.
 
+![One secured request, end to end](01-secured-request-add-member.svg)
+
+Full size: [open the raw SVG](01-secured-request-add-member.svg?raw=true), which fills the
+window and zooms with the browser. GitHub's own file viewer only shows it scaled to fit.
+
+<details>
+<summary>Mermaid source (editable mirror of the diagram, re-render the SVG after a change)</summary>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -77,9 +85,7 @@ sequenceDiagram
     Note over RIF: finally: MDC.remove("requestId")
 ```
 
-Full size: [01-secured-request-add-member.svg](01-secured-request-add-member.svg) opens in
-its own tab and zooms with the browser. On GitHub the diagram above also has zoom and pan
-controls in its corner.
+</details>
 
 Every exception named in the diagram leaves through the same exit, `ApiExceptionHandler`,
 and becomes a Problem Details body with the request id. That path is
