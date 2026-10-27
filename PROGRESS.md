@@ -2,6 +2,17 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-10-27 – docs – Five walkthroughs in `docs/walkthroughs/`, one page per path through
+  the system: a secured request end to end, the two error exits into one advice, credentials
+  and the token, startup and wiring, upload with compensation and the twice-checked download.
+  Each page: a sequence diagram with lanes for our code, Spring and infrastructure, a numbered
+  narrative, who wrote what, where to look, what breaks if a piece is removed, questions the
+  page answers. Diagrams are Mermaid source rendered to SVG by `render.sh` (pixel size set
+  so browser zoom works, white background so dark mode reads); page 4 is hand-drawn SVG.
+  Rechecks while writing fixed four claims before they were published: the membership's
+  company is a lazy reference, inserts run at flush, only the request records and the
+  principal hide secrets in `toString`, and the entry point reaches the advice but never the
+  servlet. README links the folder, ladder row added.
 - 2026-10-25 – S2·Session 6 complete – The unit rung. Four Mockito test classes, no Spring
   context: `MembershipGuardTest` (non-member and non-admin both get the neutral membership
   error, admin passes), `AuthServiceTest` (email stripped and lower-cased before lookup and

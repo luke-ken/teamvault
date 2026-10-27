@@ -106,6 +106,7 @@ cheap to run, not what makes them possible.
 | Unit tests under the integration suite | built | Mockito, no context: guard and the three services, decision logic proven without Postgres; README names the three rungs |
 | Deployment with a public URL and TLS | sprint 3 | |
 | Formatter enforced by the build | built (backend) | Spring Java Format at the validate phase; Prettier and a linter on the frontend from its first commit in Sprint 3 |
+| Walkthroughs: a request, the error exits, credentials, startup, upload | built | `docs/walkthroughs/`, one page per path with lanes for our code, Spring and infrastructure; what breaks if a piece is removed |
 
 ## Scale
 

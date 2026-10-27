@@ -9,8 +9,10 @@ outside it. Storage tiers for small vs. large companies.
 > companies with an ADMIN/MEMBER role model enforced in the service layer, a health endpoint
 > with readiness probes, integration-tested against a real Postgres (Testcontainers), formatter
 > enforced by the build. This repo is built in public; the commit history *is* the
-> build log. See [`PROGRESS.md`](PROGRESS.md) for the journal and
-> [`docs/adr/`](docs/adr/) for architecture decisions.
+> build log. See [`PROGRESS.md`](PROGRESS.md) for the journal,
+> [`docs/adr/`](docs/adr/) for architecture decisions, and
+> [`docs/walkthroughs/`](docs/walkthroughs/) for five guided tours through the running
+> system, each a sequence diagram that separates our code from what Spring does.
 
 ## Design in three decisions
 
