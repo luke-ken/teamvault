@@ -15,6 +15,10 @@
 	<description>Multi-tenant file upload and sharing service — company members share files with tiered storage</description>
 	<properties>
 		<java.version>21</java.version>
+		<!-- CVE-2026-110879: both Jackson lines patched ahead of the Boot release that
+             carries them. Drop these two once Boot's managed versions are at or above. -->
+		<jackson-bom.version>3.1.8</jackson-bom.version>
+		<jackson-2-bom.version>2.21.8</jackson-2-bom.version>
 	</properties>
 	<dependencies>
 		<dependency>
