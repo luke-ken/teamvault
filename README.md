@@ -245,6 +245,10 @@ Knowing what NOT to build at this scale is part of the design:
 - **Role changes, member removal, company update and delete**: the read and create
   paths exist; the destructive ones wait for the audit trail in Sprint 4, so nothing
   disappears without a record of who did it.
+- **Forcing `application/octet-stream` on downloads of HTML, SVG or XML**: the download
+  already sends `Content-Disposition: attachment` and Spring Security's `nosniff`, so a
+  browser saves the file instead of rendering it in the API's origin. Rewriting the stored
+  content type would buy nothing a client could not undo by renaming the file.
 - **Everything on the production ladder marked planned or named**: rate limiting, Redis,
   object store, CI, metrics. Each with its sprint or its reason in
   [`docs/production-readiness.md`](docs/production-readiness.md).

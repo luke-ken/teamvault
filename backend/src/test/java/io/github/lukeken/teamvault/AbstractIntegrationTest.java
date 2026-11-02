@@ -46,7 +46,7 @@ public class AbstractIntegrationTest {
 
 	// Not @TempDir: JUnit removes a class's temp dir when that class is done, while the
 	// cached context would keep writing blobs into it from the next class on.
-	private static final Path STORAGE_DIR = createStorageDir();
+	protected static final Path STORAGE_DIR = createStorageDir();
 
 	@DynamicPropertySource
 	static void storageProps(DynamicPropertyRegistry registry) {

@@ -3,12 +3,21 @@ package io.github.lukeken.teamvault.file;
 import com.jayway.jsonpath.JsonPath;
 import io.github.lukeken.teamvault.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -66,6 +75,70 @@ class FileApiIntegrationTest extends AbstractIntegrationTest {
 			.andExpect(status().isCreated());
 		mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
 			.andExpect(status().isConflict());
+	}
+
+	// OWASP A05: the filename is client input. It is display data, stored as sent; the
+	// path on disk is the UUID key, and the header encodes the name on the way out.
+	@Test
+	void hostileFilename_storedVerbatim_blobUnderUuid_headerEncoded() throws Exception {
+		String hostile = "../../etc/passwd \"quoted\".txt";
+		var upload = new MockMultipartFile("file", hostile, "text/plain", "harmless".getBytes());
+		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.filename", is(hostile)))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		String fileId = JsonPath.read(body, "$.id");
+
+		// Nothing escaped the storage root: every blob is named by its UUID key.
+		try (Stream<Path> blobs = Files.list(STORAGE_DIR)) {
+			assertThat(blobs.map(p -> p.getFileName().toString()))
+				.allMatch(name -> name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
+		}
+		assertThat(Files.exists(STORAGE_DIR.resolve("../../etc/passwd \"quoted\".txt").normalize())).isFalse();
+
+		// The slashes and quotes are percent-encoded in the form browsers use.
+		mvc.perform(get("/api/companies/" + ACME + "/files/" + fileId + "/download").with(bearer(ALICE)))
+			.andExpect(status().isOk())
+			.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+					containsString("filename*=UTF-8''..%2F..%2Fetc%2Fpasswd%20%22quoted%22.txt")));
+	}
+
+	@Test
+	void filenameOver255Characters_400_invalidUpload() throws Exception {
+		var upload = new MockMultipartFile("file", "x".repeat(256) + ".txt", "text/plain", "long".getBytes());
+		mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.type", endsWith("#invalid-upload")))
+			.andExpect(jsonPath("$.detail", is("Filename must be at most 255 characters")));
+	}
+
+	@Test
+	void emptyUpload_400_invalidUpload() throws Exception {
+		var upload = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
+		mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.type", endsWith("#invalid-upload")))
+			.andExpect(jsonPath("$.detail", is("Uploaded file must have content and a filename")));
+	}
+
+	// The part's Content-Type is client input too. Garbage must not be stored, or the
+	// download would fail on parsing it for the rest of the file's life.
+	@Test
+	void garbageContentType_storedAsOctetStream() throws Exception {
+		var upload = new MockMultipartFile("file", "blob.bin", "not a media type", "bytes".getBytes());
+		String body = mvc.perform(multipart("/api/companies/" + ACME + "/files").file(upload).with(bearer(ALICE)))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.contentType", is("application/octet-stream")))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		String fileId = JsonPath.read(body, "$.id");
+
+		mvc.perform(get("/api/companies/" + ACME + "/files/" + fileId + "/download").with(bearer(ALICE)))
+			.andExpect(status().isOk())
+			.andExpect(content().contentType("application/octet-stream"));
 	}
 
 	@Test

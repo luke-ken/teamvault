@@ -1,11 +1,15 @@
 package io.github.lukeken.teamvault.file;
 
+import io.github.lukeken.teamvault.common.BadRequestException;
 import io.github.lukeken.teamvault.common.ConflictException;
 import io.github.lukeken.teamvault.common.NotFoundException;
+import io.github.lukeken.teamvault.common.ProblemType;
 import io.github.lukeken.teamvault.membership.Membership;
 import io.github.lukeken.teamvault.membership.MembershipGuard;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +21,9 @@ import java.util.UUID;
 
 @Service
 public class FileService {
+
+	// The usual file system limit; the one input without a bean validation annotation.
+	static final int MAX_FILENAME_LENGTH = 255;
 
 	private final FileMetadataRepository files;
 
@@ -35,7 +42,13 @@ public class FileService {
 		Membership membership = guard.requireMember(callerId, companyId);
 		String filename = upload.getOriginalFilename();
 		if (upload.isEmpty() || filename == null || filename.isBlank()) {
-			throw new IllegalArgumentException("Uploaded file must have content and a filename");
+			throw new BadRequestException(ProblemType.INVALID_UPLOAD, "Uploaded file must have content and a filename");
+		}
+		// Stored verbatim otherwise: the name is display data, the blob lives under the
+		// UUID key, and the download header encodes it. Only the length is ours to cap.
+		if (filename.length() > MAX_FILENAME_LENGTH) {
+			throw new BadRequestException(ProblemType.INVALID_UPLOAD,
+					"Filename must be at most " + MAX_FILENAME_LENGTH + " characters");
 		}
 
 		String storageKey = UUID.randomUUID().toString();
@@ -86,9 +99,20 @@ public class FileService {
 		return files.findByIdAndCompanyId(fileId, companyId).orElseThrow(() -> new NotFoundException("File not found"));
 	}
 
+	// The part's Content-Type is client input. Parsed once here, so the download can
+	// trust what the row holds instead of failing on a stored string it cannot parse.
 	private String contentTypeOrDefault(MultipartFile upload) {
 		String contentType = upload.getContentType();
-		return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
+		if (contentType == null || contentType.isBlank()) {
+			return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+		}
+		try {
+			MediaType.parseMediaType(contentType);
+			return contentType;
+		}
+		catch (InvalidMediaTypeException e) {
+			return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+		}
 	}
 
 }

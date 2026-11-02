@@ -55,7 +55,7 @@ sequenceDiagram
     Note over Svc: @Transactional opens the transaction: it covers Postgres, not the file system.
     Svc->>Guard: requireMember(callerId, companyId)
     Guard-->>Svc: membership (carries lazy references to Company and AppUser), or ForbiddenException 403
-    Note over Svc: empty file or missing filename: IllegalArgumentException, 400 malformed-parameter.<br/>storageKey = random UUID: the key is never the filename, so a filename says nothing about the path.
+    Note over Svc: empty file, missing filename or a name over 255 characters: BadRequestException, 400 invalid-upload.<br/>Content-Type of the part parsed once, garbage becomes application/octet-stream.<br/>storageKey = random UUID: the key is never the filename, so a filename says nothing about the path.
     Svc->>Store: store(storageKey, file.getInputStream())
     Store->>FS: Files.copy(stream, root/storageKey), fails if the key exists
     FS-->>Store: written
@@ -137,9 +137,12 @@ sequenceDiagram
    `application.yaml` is enforced before the controller runs; above it, the advice answers
    `413` with the catalogue type `content-too-large`.
 2. **Scope first, then sanity (A, arrows 5 and 6).** The guard runs before anything is
-   written. Then the service rejects an empty part or a missing filename with `400`. The
-   storage key is a fresh UUID, never derived from the filename, so a crafted filename
-   cannot steer where the blob lands.
+   written. Then the service rejects an empty part, a missing filename or a name over 255
+   characters with `400` and the catalogue type `invalid-upload`. The part's content type
+   is parsed once here, and garbage becomes `application/octet-stream`, so a later download
+   never fails on a stored string. The filename itself is stored as sent: it is display
+   data. The storage key is a fresh UUID, never derived from the filename, so a crafted
+   filename cannot steer where the blob lands.
 3. **Blob before row (A, arrows 7 to 10).** The bytes are copied to the storage directory
    under the key. The file system is outside the transaction, so if this fails the method
    throws and no row was attempted: nothing to clean up.

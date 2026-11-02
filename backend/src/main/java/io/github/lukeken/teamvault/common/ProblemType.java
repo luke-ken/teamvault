@@ -20,6 +20,7 @@ public enum ProblemType {
 	VALIDATION_FAILED("validation-failed", HttpStatus.BAD_REQUEST),
 	MALFORMED_BODY("malformed-body", HttpStatus.BAD_REQUEST),
 	MALFORMED_PARAMETER("malformed-parameter", HttpStatus.BAD_REQUEST),
+	INVALID_UPLOAD("invalid-upload", HttpStatus.BAD_REQUEST),
 	CONTENT_TOO_LARGE("content-too-large", HttpStatus.CONTENT_TOO_LARGE);
 
 	private static final String CATALOGUE = "https://github.com/luke-ken/teamvault/blob/main/docs/errors.md#";

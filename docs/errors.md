@@ -60,6 +60,10 @@ tier, a word where a number goes).
 400. A path variable or query parameter has the wrong form, for example a company id that is
 not a UUID.
 
+## invalid-upload
+400. The multipart part breaks an upload rule that bean validation cannot express: no content,
+no filename, or a filename longer than 255 characters. The `detail` names the rule.
+
 ## content-too-large
 413. The upload exceeds the configured size limit.
 
