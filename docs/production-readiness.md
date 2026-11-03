@@ -44,7 +44,10 @@ cheap to run, not what makes them possible.
 | Same 401 body and timing for unknown email and wrong password | built | No account enumeration through login |
 | Clean JSON errors, no stack traces | built | OWASP; catch-all logs server-side |
 | Registration input rules, validation errors as 400 with field list | built | Password 8 to 72 (bcrypt limit), email lower-cased on write and lookup |
-| Dependency update automation | built | Dependabot for Maven, weekly, grouped; the github-actions entry joins with the first workflow in Sprint 3 |
+| Dependency update automation | built | Dependabot for Maven, weekly, grouped; the github-actions entry joins with the first workflow in Sprint 3. Dependabot sees direct dependencies only: a transitive advisory (Jackson, CVE-2026-110879) is patched by overriding the parent's BOM property until the next Boot release carries the fix |
+| OWASP Top 10:2025 walked against the code | built | Ten findings, six closed in tests and code: the upload limit tripped through a real server, Spring Security's default headers pinned, a hostile filename stored verbatim with the blob under its UUID, filename capped at 255, WARN on failed login and denied access, the generic `IllegalArgumentException` handler removed. Four named on this ladder |
+| Failed logins and denied access leave a WARN line | built | Masked email on login failures, caller UUID on 403s, request id on both; a test asserts the raw email never reaches the log |
+| Breached-password check at registration | named | Range query against the Pwned Passwords API (k-anonymity, five hash characters sent); the first outbound call the project would have, so it waits for the client timeout row |
 | Access token in memory, refresh token rotation in an httpOnly cookie | sprint 3 | ADR-004 revisit trigger 1: a 15-minute token is unusable behind a UI without renewal |
 | Swagger UI off outside the dev profile | built | ADR-006: `/v3/api-docs` public in every profile, the UI only under `dev`, both positions tested |
 | Security headers and TLS termination at the proxy | sprint 3 | nginx in front; TLS at the ingress, never in the container |
@@ -52,7 +55,7 @@ cheap to run, not what makes them possible.
 | Rate limiting on login and registration | sprint 4 | Redis-backed; bcrypt cost is also the denial-of-service lever |
 | Instant logout, token denylist | sprint 4 | ADR-004 revisit trigger 3 |
 | RS256 or an external identity provider | named | ADR-004 revisit trigger 2; Keycloak is the production answer, a self-built refresh flow is the learning answer |
-| Password reset, email verification | named | Needs an email channel the project does not have |
+| Password reset, email verification | named | Needs an email channel the project does not have; until then registration proves no ownership of the address |
 
 ## Data and storage
 
@@ -65,7 +68,9 @@ cheap to run, not what makes them possible.
 | S3-compatible object store | sprint 3 | The two-instance blocker |
 | Keyset pagination on file lists | sprint 4 | Offset paging is fine until a company has thousands of files |
 | Reference data as a replica table with a scheduled sync and a lease | sprint 4 | A list owned elsewhere is a table plus a sync job, not a cache in front of a remote call |
-| Storage quotas per tier, enforced on upload | sprint 4 | The tier column exists, the enforcement does not |
+| Storage quotas per tier, enforced on upload | sprint 4 | The tier column exists, the enforcement does not; also the cost control for an open demo |
+| Chunked uploads through presigned URLs to the object store | named | 25 MB through the servlet is right only while the backend carries the bytes; a large file goes from the browser to the object store in parallel parts and one completion call writes the row |
+| Orphan blob reconciliation | named | A crash between blob and row leaves a blob without a row; a job lists the store against the table |
 
 ## API contract
 
@@ -103,6 +108,8 @@ cheap to run, not what makes them possible.
 | Multi-stage images, non-root, no privileged port inside the container | sprint 3 | JRE-only runtime, unprivileged nginx |
 | Compose stack with one command | sprint 3 | Secret exported first, never defaulted |
 | CI: lint, test with Testcontainers, build images | sprint 3 | GitHub Actions |
+| Maven wrapper distribution pinned by checksum | named | `distributionSha256Sum` in the wrapper properties; the one supply chain gap the OWASP walk found |
+| Demo cost controls | sprint 3 | Seed logins shown on the login page, nightly reset to the seed, a small demo quota, rate limit on registration, a budget alarm; no invite code, a reviewer gives the demo two minutes |
 | Unit tests under the integration suite | built | Mockito, no context: guard and the three services, decision logic proven without Postgres; README names the three rungs |
 | Deployment with a public URL and TLS | sprint 3 | |
 | Formatter enforced by the build | built (backend) | Spring Java Format at the validate phase; Prettier and a linter on the frontend from its first commit in Sprint 3 |

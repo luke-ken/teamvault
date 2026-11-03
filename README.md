@@ -185,8 +185,10 @@ The suite has three rungs. Unit tests (`*ServiceTest`, `MembershipGuardTest`) bu
 by hand and mock its collaborators with Mockito; no Spring context, milliseconds each. Slice
 tests (`@WebMvcTest`) start the web layer only, for the exception handler and the public ping.
 Integration tests (`*ApiIntegrationTest`) run the whole application against Postgres through
-MockMvc, sharing one context. All three run in the same `./mvnw test`; a Surefire/Failsafe
-split comes with CI. Test methods are named `method_condition_result`, for example
+MockMvc, sharing one context. One of them, the upload limit, starts a real server on a random
+port instead: MockMvc hands multipart parts over already parsed, so the container's size limit
+never runs under it. All three rungs run in the same `./mvnw test`; a Surefire/Failsafe split
+comes with CI. Test methods are named `method_condition_result`, for example
 `add_alreadyMember_conflict_nothingSaved`, so a red line in the report reads as a sentence.
 
 ## API

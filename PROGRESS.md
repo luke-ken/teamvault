@@ -2,6 +2,21 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-03 – S2·S8 – OWASP findings closed. Four commits: the upload limit tripped through a
+  real server (`RANDOM_PORT`, `RestClient`, a part one byte over 25 MB; MockMvc cannot test it,
+  a chunked body made Tomcat drop the connection, a fixed-length body gets the 413 out);
+  Spring Security's default headers pinned on JSON and download with the encoded
+  `Content-Disposition`; hostile filename stored verbatim, blob under its UUID, filename capped
+  at 255 and the part's content type parsed once (`invalid-upload`, `BadRequestException`);
+  the generic `IllegalArgumentException` handler removed, framework exceptions answer 500
+  without their message; WARN on failed login (masked email) and denied access (caller id),
+  both with the request id, asserted through `OutputCaptureExtension`. Dependabot PR merged
+  (Boot 4.1.2, springdoc 3.2.0), `mvnw.cmd` renormalized after the bot committed CRLF, both
+  Jackson lines pinned for CVE-2026-110879 through the parent's BOM properties. 67 tests, three
+  contexts. Ladder: the walk, the WARN lines, breached-password check, wrapper checksum,
+  chunked uploads, orphan reconciliation, demo cost controls. Plan in
+  `docs/plans/owasp-findings-plan.md`. **Next:** Part 2 retro, decide the refresh-token
+  stretch (ADR-007) or close Sprint 2.
 - 2026-10-27 – docs – Five walkthroughs in `docs/walkthroughs/`, one page per path through
   the system: a secured request end to end, the two error exits into one advice, credentials
   and the token, startup and wiring, upload with compensation and the twice-checked download.
