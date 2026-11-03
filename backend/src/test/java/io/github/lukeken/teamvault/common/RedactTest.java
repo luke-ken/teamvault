@@ -20,7 +20,11 @@ public class RedactTest {
 	void email_noAtSignOrNothingBeforeIt_fullyMasked() {
 		assertThat(Redact.email("not-an-email")).isEqualTo("***");
 		assertThat(Redact.email("@acme.io")).isEqualTo("***");
-		assertThat(Redact.email(null)).isEqualTo("***");
+	}
+
+	@Test
+	void email_null_staysVisiblyNull() {
+		assertThat(Redact.email(null)).isEqualTo("null");
 	}
 
 }

@@ -16,7 +16,7 @@ public final class Redact {
 	 */
 	public static String email(String email) {
 		if (email == null) {
-			return "***";
+			return "null";
 		}
 		int at = email.indexOf("@");
 		if (at < 1) {
