@@ -3,6 +3,9 @@ package io.github.lukeken.teamvault.common;
 import com.jayway.jsonpath.JsonPath;
 import io.github.lukeken.teamvault.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
@@ -27,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * comes from the security chain or from a controller, and the request id on every
  * response.
  */
+@ExtendWith(OutputCaptureExtension.class)
 public class ErrorContractApiIntegrationTest extends AbstractIntegrationTest {
 
 	private final static String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -66,9 +70,16 @@ public class ErrorContractApiIntegrationTest extends AbstractIntegrationTest {
 	}
 
 	@Test
-	void nonMember_403_membershipRequired() throws Exception {
-		mvc.perform(get("/api/companies/" + GLOBEX + "/files").with(bearer(ALICE)))
-			.andExpectAll(problem(HttpStatus.FORBIDDEN, "membership-required", "Not a member of this company"));
+	void nonMember_403_membershipRequired_loggedWithCallerIdAndRequestId(CapturedOutput output) throws Exception {
+		MvcResult result = mvc.perform(get("/api/companies/" + GLOBEX + "/files").with(bearer(ALICE)))
+			.andExpectAll(problem(HttpStatus.FORBIDDEN, "membership-required", "Not a member of this company"))
+			.andReturn();
+
+		String requestId = result.getResponse().getHeader(RequestIdFilter.HEADER);
+		assertThat(output)
+			.contains("[" + requestId + "] ",
+					"Access denied: caller aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa is no member of company " + GLOBEX)
+			.doesNotContain(ALICE);
 	}
 
 	@Test

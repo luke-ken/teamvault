@@ -3,7 +3,10 @@ package io.github.lukeken.teamvault.auth;
 import com.jayway.jsonpath.JsonPath;
 import io.github.lukeken.teamvault.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@ExtendWith(OutputCaptureExtension.class)
 public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 
 	static final String NEW_PASSWORD = "correct-horse-battery";
@@ -76,7 +80,7 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 	}
 
 	@Test
-	void login_wrongPasswordAndUnknownEmail_sameBody() throws Exception {
+	void login_wrongPasswordAndUnknownEmail_sameBody(CapturedOutput output) throws Exception {
 		mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
 			.content(registerBody("frank@example.com", NEW_PASSWORD, "Frank"))).andExpect(status().isCreated());
 
@@ -98,6 +102,11 @@ public class AuthApiIntegrationTest extends AbstractIntegrationTest {
 		// No account enumeration through login: identical answers once the per-request id
 		// is out.
 		assertThat(withoutRequestId(wrongPassword)).isEqualTo(withoutRequestId(unknownEmail));
+
+		// Both failures leave a WARN with the email masked; the raw address never reaches
+		// the log, and the line does not tell the two cases apart either.
+		assertThat(output).contains("WARN", "Login failed for f***@example.com", "Login failed for n***@example.com")
+			.doesNotContain("frank@example.com", "nobody@example.com");
 	}
 
 	@Test

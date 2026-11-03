@@ -106,11 +106,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return Problems.of(ProblemType.ALREADY_EXISTS, "Resource already exists");
 	}
 
-	@ExceptionHandler(IllegalArgumentException.class)
-	ProblemDetail illegalArgument(IllegalArgumentException e) {
-		return Problems.of(ProblemType.MALFORMED_PARAMETER, e.getMessage());
-	}
-
 	// --- authentication: from the login controller and from the security chain ---
 
 	// No token at all. The chain's entry point delegates here.

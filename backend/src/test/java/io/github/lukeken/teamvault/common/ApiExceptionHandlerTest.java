@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.hasSize;
@@ -49,6 +51,17 @@ public class ApiExceptionHandlerTest {
 			.andExpect(content().string(not(containsString("hunter2"))));
 	}
 
+	// OWASP A10: a framework IllegalArgumentException is a bug or an attack, not a client
+	// error. No handler maps it to 400 with its message; the catch-all answers.
+	@Test
+	void frameworkIllegalArgument_500_noMessage() throws Exception {
+		mvc.perform(get("/boom/uuid"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.type").doesNotExist())
+			.andExpect(jsonPath("$.detail", is("Unexpected error")))
+			.andExpect(content().string(not(containsString("UUID"))));
+	}
+
 	@Test
 	void apiException_mapsToItsProblemType() throws Exception {
 		mvc.perform(get("/boom/missing"))
@@ -80,6 +93,11 @@ public class ApiExceptionHandlerTest {
 		@GetMapping("/boom")
 		void boom() {
 			throw new IllegalStateException("db password is hunter2");
+		}
+
+		@GetMapping("/boom/uuid")
+		void uuid() {
+			UUID.fromString("not-a-uuid");
 		}
 
 		@GetMapping("/boom/missing")

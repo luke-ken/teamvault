@@ -1,13 +1,17 @@
 package io.github.lukeken.teamvault.auth;
 
 import io.github.lukeken.teamvault.common.ConflictException;
+import io.github.lukeken.teamvault.common.Redact;
 import io.github.lukeken.teamvault.user.AppUser;
 import io.github.lukeken.teamvault.user.AppUserRepository;
 import io.github.lukeken.teamvault.user.AuthenticatedUser;
 import io.github.lukeken.teamvault.user.UserResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +20,8 @@ import java.util.Locale;
 
 @Service
 public class AuthService {
+
+	private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
 	private final AppUserRepository appUserRepository;
 
@@ -56,9 +62,18 @@ public class AuthService {
 	 * and wrong password alike.
 	 */
 	public TokenResponse login(LoginRequest request) {
-		Authentication authentication = authenticationManager
-			.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
-		return tokenService.issue((AuthenticatedUser) authentication.getPrincipal());
+		try {
+			Authentication authentication = authenticationManager
+				.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+			return tokenService.issue((AuthenticatedUser) authentication.getPrincipal());
+		}
+		// OWASP A09: a failed login leaves a line, with the request id from the MDC.
+		// Masked on purpose: the input is attacker-controlled and a log is the
+		// leakiest store we have.
+		catch (AuthenticationException e) {
+			log.warn("Login failed for {}", Redact.email(request.email()));
+			throw e;
+		}
 	}
 
 }
