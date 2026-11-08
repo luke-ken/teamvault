@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 
 /**
  * Issue and verify side of ADR-004, kept apart from {@code SecurityConfig} so a slice
@@ -43,6 +44,15 @@ public class JwtConfig {
 		// Default validator = exp/nbf with 60 s clock skew; plus our issuer check.
 		decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));
 		return decoder;
+	}
+
+	/**
+	 * The one source of "now" for token lifetimes, so a unit test can hand the service a
+	 * fixed clock and assert expiry instants exactly.
+	 */
+	@Bean
+	Clock clock() {
+		return Clock.systemUTC();
 	}
 
 	private static SecretKey secretKey(JwtProperties props) {

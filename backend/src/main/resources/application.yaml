@@ -28,6 +28,11 @@ teamvault:
     # signing with a known key.
     secret: ${TEAMVAULT_JWT_SECRET:}
     ttl: 15m
+    # ADR-007: a refresh token lives 14 days from its own issue, a family at most 30 days
+    # from the login that started it. The cookie is Secure everywhere but the dev profile.
+    refresh-ttl: 14d
+    refresh-family-ttl: 30d
+    refresh-cookie-secure: true
 
 springdoc:
   api-docs:

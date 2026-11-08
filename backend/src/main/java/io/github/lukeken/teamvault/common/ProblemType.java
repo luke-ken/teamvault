@@ -14,6 +14,7 @@ public enum ProblemType {
 	AUTHENTICATION_REQUIRED("authentication-required", HttpStatus.UNAUTHORIZED),
 	INVALID_TOKEN("invalid-token", HttpStatus.UNAUTHORIZED),
 	BAD_CREDENTIALS("bad-credentials", HttpStatus.UNAUTHORIZED),
+	INVALID_REFRESH_TOKEN("invalid-refresh-token", HttpStatus.UNAUTHORIZED),
 	MEMBERSHIP_REQUIRED("membership-required", HttpStatus.FORBIDDEN),
 	ADMIN_ROLE_REQUIRED("admin-role-required", HttpStatus.FORBIDDEN), FORBIDDEN("forbidden", HttpStatus.FORBIDDEN),
 	NOT_FOUND("not-found", HttpStatus.NOT_FOUND), ALREADY_EXISTS("already-exists", HttpStatus.CONFLICT),

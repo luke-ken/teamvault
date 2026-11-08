@@ -3,3 +3,10 @@
 springdoc:
   swagger-ui:
     enabled: true
+
+teamvault:
+  jwt:
+    # Plain http://localhost: a Secure cookie would never come back from the browser or
+    # the .http client. Every other profile keeps the default.
+    refresh-cookie-secure: false
+    
