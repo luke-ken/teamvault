@@ -36,13 +36,16 @@ is pulled into Sprint 2 so the frontend starts against a finished auth API.
 ## Decision
 Option 3 with option 4's split. `POST /api/auth/login` returns the access token in the body
 and sets the refresh token as a cookie `HttpOnly; Secure; SameSite=Strict;
-Path=/api/auth/refresh`. `POST /api/auth/refresh` reads the cookie, marks the row used and
+Path=/api/auth`. The path covers refresh and logout, the two endpoints that need the cookie
+to name the family; register and login ignore it. `POST /api/auth/refresh` reads the cookie, marks the row used and
 inserts the successor in one transaction, returns a new access token and the new cookie. A
 used token presented again revokes the whole family. `POST /api/auth/logout` revokes the
 family and clears the cookie. Refresh tokens expire 14 days after issue; a family ends 30
-days after its first row regardless. Expired rows of the logging-in user are deleted during
-login; a scheduled sweep joins in Sprint 4. The hash is unsalted SHA-256 on purpose: the token
-is 256 random bits, not a password, so a slow salted hash would protect nothing.
+days after its first row regardless. A nightly scheduled sweep deletes rows whose expiry has
+passed, whatever their status. Deleting them during login was considered and dropped: login
+would do two jobs, and a failing delete would fail the login. The hash is unsalted SHA-256 on
+purpose: the token is 256 random bits, not a password, so a slow salted hash would protect
+nothing.
 
 ## Trade-off (why this, what we give up)
 The API is no longer stateless on one path: the refresh call reads and writes a table, once
@@ -53,6 +56,9 @@ overlap briefly. Both are the accepted gap that the Sprint 4 denylist would clos
 security-critical code than ADR-004 already made us own (token generation, rotation, the
 reuse rule); mitigated by small surface, one service, and tests for every outcome of the
 lookup. A reload of the frontend starts with a silent refresh because the access token lives
-in memory; that is a Sprint 3 line in the React app. Revisit: an external identity provider
+in memory; that is a Sprint 3 line in the React app. Two tabs share one cookie jar: if both
+refresh with the same token in the same instant, the second is a reuse to the server and the
+family dies, so the user logs in again. The frontend dedupes refreshes across tabs in Sprint 3;
+a server-side leeway window is the fallback if that is not enough. Revisit: an external identity provider
 replaces this ADR wholesale (ADR-004 trigger 2), and `SameSite=Strict` is reconsidered if the
 frontend ever moves to another site than the API.

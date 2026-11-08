@@ -4,8 +4,8 @@ ADR-007 settles the shape: an opaque refresh token in a table, rotated on every 
 per login, reuse revokes the family, hybrid delivery (access token in the body, refresh token
 in an httpOnly cookie). This plan takes the decision down to code. Method as in the other
 plans: inventory, forks settled first, bottom-up, tests with each step. Two corrections to the
-ADR text fall out of the inventory (forks 2 and 4); they go in when the status flips to
-accepted.
+ADR text fell out of the inventory (forks 2, 4 and 5) and are already applied; only the status
+flips to accepted when the build lands.
 
 ## Inventory
 
@@ -47,13 +47,13 @@ accepted.
        CONSTRAINT uq_refresh_token_hash UNIQUE (token_hash)
    );
    CREATE INDEX idx_refresh_token_family ON refresh_token (family_id);
-   CREATE INDEX idx_refresh_token_user_expires ON refresh_token (user_id, expires_at);
+   CREATE INDEX idx_refresh_token_expires ON refresh_token (expires_at);
    ```
 
    `family_expires_at` is set once at login (`now + 30d`) and copied to every successor, so a
    row's `expires_at` is `min(now + 14d, family_expires_at)` at insert time. The lookup then
    checks one column, and cleanup stays `expires_at < now`. The unique on the hash serves the
-   lookup. The family index serves revocation, the user index serves the login-time delete.
+   lookup. The family index serves revocation, the expiry index serves the nightly sweep.
    `docs/erd.md` gets the table and the two index justifications.
 2. **Cookie path is `/api/auth`, not `/api/auth/refresh`.** The ADR scoped the cookie to the
    refresh path, but logout needs it too: the cookie is the only thing that names the family.
@@ -63,12 +63,12 @@ accepted.
    `Secure` comes from `teamvault.jwt.refresh-cookie-secure` (default `true`), set to `false`
    in `application-dev.yaml` so the `.http` file works on `http://localhost`. The test profile
    keeps the default, so the integration test asserts all four flags. The ADR decision text
-   changes the path when it flips to accepted.
+   carries the corrected path.
 3. **Two services, one orchestrator.** New `auth/RefreshTokenService` owns the table: random
-   bytes, hash, insert, rotate, revoke, cleanup; collaborators `RefreshTokenRepository` and a
-   `Clock`. `AuthService` orchestrates: `login` authenticates, issues the access token, asks
-   for a refresh token and triggers the cleanup; `refresh` rotates and issues a new access
-   token for the row's user; `logout` revokes. Both return `AuthTokens(TokenResponse access,
+   bytes, hash, insert, rotate, revoke; collaborators `RefreshTokenRepository` and a `Clock`.
+   `AuthService` orchestrates: `login` authenticates, issues the access token and asks for a
+   refresh token; `refresh` rotates and issues a new access token for the row's user; `logout`
+   revokes. Login and refresh return `AuthTokens(TokenResponse access,
    String refreshToken)`; the controller turns the second half into a `Set-Cookie` header via
    `ResponseEntity`, with a small `RefreshCookie` component that builds the set and the clear
    cookie from `JwtProperties`. The body stays `TokenResponse`, so curl and the `.http` file see
@@ -93,13 +93,17 @@ accepted.
    trade-off: two tabs that refresh with the same cookie in the same instant are a reuse to the
    server, and the family dies. The SPA dedupes refreshes across tabs in Sprint 3 (Web Locks or
    `BroadcastChannel`); a server-side leeway window is the fallback if that is not enough.
-5. **Cleanup is the first JPQL in the codebase.** A derived `deleteBy...` loads every entity
-   and deletes them one by one; a client that refreshes every 15 minutes leaves 96 rows a day,
-   so after two weeks that is over a thousand selects for one login. One statement instead:
-   `@Modifying @Query("delete from RefreshToken r where r.user = :user and r.expiresAt < :now")`.
-   Called inside `login` after authentication succeeded and in the same transaction as the
-   insert, never before: an unauthenticated caller must not trigger work for an arbitrary
-   account. Status is not part of the condition (ADR-007: an expired row can do nothing).
+5. **Cleanup is a scheduled sweep, not a login side job.** The ADR named a login-time delete
+   as the cheapest form; dropped here because the login would do two jobs and a failing delete
+   would fail the login. Instead `auth/RefreshTokenCleanup` with
+   `@Scheduled(cron = "0 0 3 * * *")` calls one bulk statement, the first JPQL in the codebase:
+   `@Modifying @Query("delete from RefreshToken r where r.expiresAt < :now")`. A derived
+   `deleteBy...` would load every entity first; a client that refreshes every 15 minutes leaves
+   96 rows a day, so one statement matters. `@EnableScheduling` on a new `config/SchedulingConfig`.
+   Status is not part of the condition (an expired row can do nothing). Cron, not fixed rate: the
+   wall clock survives restarts, an interval would reset with every deploy. A missed night costs
+   nothing, and two instances running the same delete is harmless, so no lock. The sweep logs the
+   row count at INFO. The Sprint 4 sweep row is done early.
 6. **Logout is idempotent.** `POST /api/auth/logout` reads the cookie; present and known, the
    family's live row is revoked; missing or unknown, nothing happens. Both answer 204 with the
    clearing cookie (`Max-Age=0`, same path and flags). No bearer token needed: the cookie is the
@@ -113,15 +117,17 @@ accepted.
    `rotate_liveToken_markedUsed_successorSharesFamilyAndCap`,
    `rotate_nearFamilyCap_successorExpiresAtTheCap`, `rotate_usedToken_revokesFamily_401`,
    `rotate_revokedOrExpiredOrUnknown_401_nothingWritten`, `revoke_liveRowOfTheFamily`,
-   `AuthServiceTest.login_issuesRefreshToken_andDeletesTheUsersExpiredRows`. Integration, in
+   `AuthServiceTest.login_issuesRefreshToken_nextToTheAccessToken`;
+   `RefreshTokenCleanupTest.sweep_deletesByExpiryOnly_logsTheCount`. Integration, in
    `AuthApiIntegrationTest`: `login_setsRefreshCookie_httpOnlySecureStrictScopedToAuth`,
    `refresh_rotates_oldCookieRejectedAfterwards`,
    `refresh_reuse_revokesFamily_nextRefreshWithTheNewCookie401`,
    `refresh_withoutCookie_401_invalidRefreshToken`, `refresh_expiredRow_401` (row planted via
    the repository with a past `expires_at`), `logout_204_clearsCookie_refreshAfterwards401`.
    Each integration test registers its own user so the rows do not collide with the cached
-   bearer logins of other classes. Expected count: 67 plus 13.
-9. **Docs.** ADR-007 to accepted with the path change and the two-tab note. `docs/errors.md`
+   bearer logins of other classes. Expected count: 67 plus 14.
+9. **Docs.** ADR-007 status to accepted (path, two-tab note and sweep are already in the
+   text). `docs/errors.md`
    entry `invalid-refresh-token`. README: the auth flow paragraph gains refresh and logout, the
    "deliberately not built" bullet on refresh tokens becomes a bullet on the denylist and the
    two-tab leeway. Ladder row "Access token in memory, refresh token rotation in an httpOnly
@@ -141,12 +147,13 @@ accepted.
 3. `ProblemType.INVALID_REFRESH_TOKEN`; `common/UnauthorizedException`.
 4. `auth/RefreshTokenService` plus `RefreshTokenServiceTest` (unit rung first, no Postgres).
 5. `AuthTokens` record; `AuthService.login` extended, `refresh` and `logout` added;
-   `AuthServiceTest` grows the login case and the mocks.
+   `AuthServiceTest` grows the login case and the mock; `auth/RefreshTokenCleanup` plus
+   `config/SchedulingConfig` and `RefreshTokenCleanupTest`.
 6. `auth/RefreshCookie`; `AuthController` returns `ResponseEntity<TokenResponse>` for login
    and refresh, `ResponseEntity<Void>` for logout; Javadoc sentence on logout replaced.
 7. `AuthApiIntegrationTest` six new tests; `SecurityConfig` CSRF comment extended.
 8. `docs/errors.md`; `docs/openapi.yaml` from the export test; `.http` file.
 
 ### Commit 2: `docs: ADR-007 accepted, refresh flow in the README, ladder and ERD`
-9. ADR-007 status, path, two-tab note; ADR-004 trigger 1; README; ladder row; `docs/erd.md`;
+9. ADR-007 status; ADR-004 trigger 1; README; ladder row; `docs/erd.md`;
    `CLAUDE.md` state; `PROGRESS.md` entry.
