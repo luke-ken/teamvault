@@ -34,6 +34,52 @@ paths:
       security: []
       tags:
       - auth
+  /api/auth/logout:
+    post:
+      operationId: logout
+      parameters:
+      - in: cookie
+        name: refresh_token
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Error, see docs/errors.md"
+      security: []
+      tags:
+      - auth
+  /api/auth/refresh:
+    post:
+      operationId: refresh
+      parameters:
+      - in: cookie
+        name: refresh_token
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Error, see docs/errors.md"
+      security: []
+      tags:
+      - auth
   /api/auth/register:
     post:
       operationId: register

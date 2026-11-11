@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-// Unit rung: the service is real, its four collaborators are mocks. Queries are stubbed,
+// Unit rung: the service is real, its five collaborators are mocks. Queries are stubbed,
 // the one command whose content matters (save) is verified through a captor.
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceTest {
@@ -47,11 +47,14 @@ public class AuthServiceTest {
 	@Mock
 	private TokenService tokens;
 
+	@Mock
+	private RefreshTokenService refreshTokens;
+
 	private AuthService service;
 
 	@BeforeEach
 	void setup() {
-		service = new AuthService(users, encoder, authenticationManager, tokens);
+		service = new AuthService(users, encoder, authenticationManager, tokens, refreshTokens);
 	}
 
 	@Test
@@ -97,17 +100,19 @@ public class AuthServiceTest {
 	}
 
 	@Test
-	void login_validCredentials_tokenIssuedForTheAuthenticatedPrincipal() {
+	void login_validCredentials_accessTokenAndRefreshTokenForTheAuthenticatedPrincipal() {
 		AuthenticatedUser principal = new AuthenticatedUser(UUID.randomUUID(), "alice@acme.io", "$2a$10$hash");
 		TokenResponse issued = new TokenResponse("jwt", Instant.parse("2026-10-25T12:00:00Z"));
 
 		when(authenticationManager.authenticate(any()))
 			.thenReturn(UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of()));
 		when(tokens.issue(principal)).thenReturn(issued);
+		when(refreshTokens.issue(principal.id())).thenReturn("raw-refresh");
 
-		TokenResponse response = service.login(new LoginRequest("alice@acme.io", "hunter22!"));
+		AuthTokens response = service.login(new LoginRequest("alice@acme.io", "hunter22!"));
 
-		assertThat(response).isSameAs(issued);
+		assertThat(response.access()).isSameAs(issued);
+		assertThat(response.refreshToken()).isEqualTo("raw-refresh");
 
 		ArgumentCaptor<Authentication> request = ArgumentCaptor.forClass(Authentication.class);
 		verify(authenticationManager).authenticate(request.capture());
@@ -123,7 +128,22 @@ public class AuthServiceTest {
 		assertThatThrownBy(() -> service.login(new LoginRequest("alice@acme.io", "wrong")))
 			.isInstanceOf(BadCredentialsException.class);
 
-		verifyNoInteractions(tokens);
+		verifyNoInteractions(tokens, refreshTokens);
+	}
+
+	@Test
+	void refresh_rotatesFirst_thenIssuesTheAccessTokenForTheRowsUser() {
+		AuthenticatedUser principal = new AuthenticatedUser(UUID.randomUUID(), "alice@acme.io", "$2a$10$hash");
+		TokenResponse issued = new TokenResponse("jwt", Instant.parse("2026-10-25T12:00:00Z"));
+
+		when(refreshTokens.rotate("r1")).thenReturn(new RefreshTokenService.Rotation(principal, "r2"));
+		when(tokens.issue(principal)).thenReturn(issued);
+
+		AuthTokens response = service.refresh("r1");
+
+		assertThat(response.access()).isSameAs(issued);
+		assertThat(response.refreshToken()).isEqualTo("r2");
+		verifyNoInteractions(authenticationManager);
 	}
 
 }

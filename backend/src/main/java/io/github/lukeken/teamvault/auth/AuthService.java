@@ -31,12 +31,16 @@ public class AuthService {
 
 	private final TokenService tokenService;
 
+	private final RefreshTokenService refreshTokenService;
+
 	public AuthService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-			AuthenticationManager authenticationManager, TokenService tokenService) {
+			AuthenticationManager authenticationManager, TokenService tokenService,
+			RefreshTokenService refreshTokenService) {
 		this.appUserRepository = appUserRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.authenticationManager = authenticationManager;
 		this.tokenService = tokenService;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	/**
@@ -57,15 +61,16 @@ public class AuthService {
 	}
 
 	/**
-	 * Exchanges email and password for a short-lived access token. A failed check throws
-	 * AuthenticationException; the advice turns it into one 401 message for unknown email
-	 * and wrong password alike.
+	 * Exchanges email and password for a short-lived access token and a new refresh token
+	 * family (ADR-007). A failed check throws AuthenticationException; the advice turns
+	 * it into one 401 message for unknown email and wrong password alike.
 	 */
-	public TokenResponse login(LoginRequest request) {
+	public AuthTokens login(LoginRequest request) {
 		try {
 			Authentication authentication = authenticationManager
 				.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
-			return tokenService.issue((AuthenticatedUser) authentication.getPrincipal());
+			AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
+			return new AuthTokens(tokenService.issue(user), refreshTokenService.issue(user.id()));
 		}
 		// OWASP A09: a failed login leaves a line, with the request id from the MDC.
 		// Masked on purpose: the input is attacker-controlled and a log is the
@@ -74,6 +79,25 @@ public class AuthService {
 			log.warn("Login failed for {}", Redact.email(request.email()));
 			throw e;
 		}
+	}
+
+	/**
+	 * Trades the refresh token from the cookie for a new access token and its successor.
+	 * Every failure is one 401 from the rotation; the access token is issued only after
+	 * the rotation succeeded.
+	 */
+	public AuthTokens refresh(String refreshToken) {
+		RefreshTokenService.Rotation rotation = refreshTokenService.rotate(refreshToken);
+		return new AuthTokens(tokenService.issue(rotation.user()), rotation.refreshToken());
+	}
+
+	/**
+	 * Ends the family behind the cookie. The access token in flight stays valid for its
+	 * remaining minutes (ADR-007 trade-off); the denylist that would close that is Sprint
+	 * 4.
+	 */
+	public void logout(String refreshToken) {
+		refreshTokenService.revoke(refreshToken);
 	}
 
 }

@@ -1,14 +1,13 @@
 package io.github.lukeken.teamvault.auth;
 
-import io.github.lukeken.teamvault.user.AuthenticatedUser;
 import io.github.lukeken.teamvault.user.UserResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,8 +22,11 @@ public class AuthController {
 
 	private final AuthService authService;
 
-	public AuthController(AuthService authService) {
+	private final RefreshCookie refreshCookie;
+
+	public AuthController(AuthService authService, RefreshCookie refreshCookie) {
 		this.authService = authService;
+		this.refreshCookie = refreshCookie;
 	}
 
 	/**
@@ -38,11 +40,35 @@ public class AuthController {
 	}
 
 	/**
-	 * Logout has no endpoint: the token is stateless, the client discards it (ADR-004).
+	 * Access token in the body, refresh token in an httpOnly cookie (ADR-007).
+	 * Non-browser clients read the body and ignore the cookie.
 	 */
 	@PostMapping("/login")
-	public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-		return authService.login(request);
+	public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+		return withCookie(authService.login(request));
+	}
+
+	/**
+	 * The cookie is the credential here, so the parameter is optional on purpose: a
+	 * missing cookie is one of the 401 outcomes, not a 400.
+	 */
+	@PostMapping("/refresh")
+	public ResponseEntity<TokenResponse> refresh(
+			@CookieValue(name = RefreshCookie.NAME, required = false) String refreshToken) {
+		return withCookie(authService.refresh(refreshToken));
+	}
+
+	/** Revokes the family and clears the cookie. Idempotent: no cookie is still a 204. */
+	@PostMapping("/logout")
+	public ResponseEntity<Void> logout(@CookieValue(name = RefreshCookie.NAME, required = false) String refreshToken) {
+		authService.logout(refreshToken);
+		return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, refreshCookie.clear().toString()).build();
+	}
+
+	private ResponseEntity<TokenResponse> withCookie(AuthTokens tokens) {
+		return ResponseEntity.ok()
+			.header(HttpHeaders.SET_COOKIE, refreshCookie.set(tokens.refreshToken()).toString())
+			.body(tokens.access());
 	}
 
 }
