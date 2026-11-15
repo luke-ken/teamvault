@@ -2,6 +2,14 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-15 – S2·S11 – Sprint 2 closed. README status line carries the error contract, the OpenAPI
+  document and the three-rung suite; everything else of the README pass was already in from the
+  sessions that built it. Sprint 2 brought the project from 18 to 82 tests (30 unit, 5 slice, 47
+  integration in three contexts), ADR-005 to ADR-007 accepted, five walkthroughs, the OWASP walk,
+  and the refresh token flow. Retro and the Sprint 3 order live in the workspace breakdown; the
+  short version: frontend against the generated client first, auth in the SPA with the silent
+  refresh and the two-tab dedupe, then images, compose, Actions, and EC2 plus Compose behind
+  Caddy. **Next:** Sprint 3, Session 1: breakdown, then the Vite skeleton with the generated client.
 - 2026-11-15 – S2·S10 – Refresh token rotation built (ADR-007 accepted, 11.11 to 15.11). Plan
   first (`docs/plans/refresh-token-plan.md`), three ADR corrections before any code: cookie
   path `/api/auth` so logout sees it, cleanup as a nightly sweep instead of a login side job,

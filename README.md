@@ -4,12 +4,13 @@ Multi-tenant file upload & sharing service. Users belong to companies; a file up
 by one colleague is automatically visible to the whole company, and never to anyone
 outside it. Storage tiers for small vs. large companies.
 
-> **Status:** the backend core is running: tenant-isolated file upload/list/download on a
-> hand-designed PostgreSQL schema, registration and bearer-token auth with self-issued JWTs, renewed through rotating
-> refresh tokens in an httpOnly cookie,
-> companies with an ADMIN/MEMBER role model enforced in the service layer, a health endpoint
-> with readiness probes, integration-tested against a real Postgres (Testcontainers), formatter
-> enforced by the build. This repo is built in public; the commit history *is* the
+> **Status:** the backend is complete for the frontend to build on: tenant-isolated file
+> upload/list/download on a hand-designed PostgreSQL schema, registration and bearer-token auth
+> with self-issued JWTs, renewed through rotating refresh tokens in an httpOnly cookie, companies
+> with an ADMIN/MEMBER role model enforced in the service layer, Problem Details on every error
+> with a request id, an OpenAPI 3.1 contract exported from the code, a health endpoint with
+> readiness probes, 82 tests on three rungs (unit, web slice, full application against a real
+> Postgres in Testcontainers), formatter enforced by the build. This repo is built in public; the commit history *is* the
 > build log. See [`PROGRESS.md`](PROGRESS.md) for the journal,
 > [`docs/adr/`](docs/adr/) for architecture decisions, and
 > [`docs/walkthroughs/`](docs/walkthroughs/) for five guided tours through the running
