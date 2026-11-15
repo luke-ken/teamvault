@@ -19,7 +19,11 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http, JsonAuthenticationEntryPoint entryPoint)
 			throws Exception {
 		http
-			// Pure token API, no cookie or session auth: CSRF does not apply.
+			// Pure token API: every protected route is authenticated by the bearer
+			// header, which a cross-site page cannot set, so CSRF does not apply. The
+			// one cookie (ADR-007) is SameSite=Strict and scoped to /api/auth: a
+			// cross-site page cannot send it, and the refresh response it would earn
+			// is unreadable to that page anyway.
 			.csrf(csrf -> csrf.disable())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/ping")

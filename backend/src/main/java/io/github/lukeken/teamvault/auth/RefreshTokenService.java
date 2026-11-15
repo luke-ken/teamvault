@@ -80,8 +80,10 @@ public class RefreshTokenService {
 	 * Trades a live token for its successor. Three outcomes of the one lookup: live means
 	 * rotate; used means a second party holds a token of this family, so the family dies;
 	 * anything else (revoked, expired, unknown, no cookie) is a plain 401. One detail
-	 * text for every failure, so the response does not say which it was.
+	 * text for every failure, so the response does not say which it was. The reuse path
+	 * writes the revocation and then throws, so that exception must not roll it back.
 	 */
+	@Transactional(noRollbackFor = UnauthorizedException.class)
 	public Rotation rotate(String rawToken) {
 		if (rawToken == null) {
 			throw invalid();
@@ -92,7 +94,7 @@ public class RefreshTokenService {
 		if (current.isUsed()) {
 			revokeFamily(current.getFamilyId(), now);
 			// OWASP A09: the one signal rotation exists for. Ids only, no token material.
-			log.warn("Refresh token reuses: family {} of user {} revoked", current.getFamilyId(),
+			log.warn("Refresh token reuse: family {} of user {} revoked", current.getFamilyId(),
 					current.getUser().getId());
 			throw invalid();
 		}

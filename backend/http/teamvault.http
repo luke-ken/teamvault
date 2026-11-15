@@ -23,9 +23,22 @@ Content-Type: application/json
 
 > {% client.global.set("carol", response.body.token); %}
 
+### refresh: the client keeps the refresh_token cookie from the login and sends it back by
+### itself (Path=/api/auth); a new access token in the body, a new cookie in the response
+POST {{host}}/api/auth/refresh
+
+> {% client.global.set("carol", response.body.token); %}
+
 ### who am I
 GET {{host}}/api/me
 Authorization: Bearer {{carol}}
+
+### logout: 204, the cookie is cleared and carol's family revoked; her access token in
+### {{carol}} still works for its remaining minutes (ADR-007 trade-off)
+POST {{host}}/api/auth/logout
+
+### error: refresh after logout (or with no cookie at all), 401 invalid-refresh-token
+POST {{host}}/api/auth/refresh
 
 ### found Initech: the creator becomes its first ADMIN, keep the id
 POST {{host}}/api/companies

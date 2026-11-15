@@ -29,6 +29,13 @@ with the token.
 401. Login with an unknown email or a wrong password. One body and one timing for both, so
 the response never reveals which emails exist.
 
+## invalid-refresh-token
+401. `POST /api/auth/refresh` without a usable `refresh_token` cookie: missing, unknown,
+expired, already used, or part of a revoked family. One body for all five, so the response
+does not say which. No `WWW-Authenticate`: the credential is a cookie, not a bearer header.
+Log in again. A used token presented a second time also revokes its whole family
+([ADR-007](adr/007-refresh-token-rotation.md)).
+
 ## membership-required
 403. The caller is not a member of the company in the path. Returned whether or not the
 company exists, so ids cannot be probed.
