@@ -2,6 +2,13 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-15 – S3·S2 (first half) – Frontend skeleton committed: create-vite 9.3 template
+  trimmed, TypeScript pinned to 5.9.3 (the template ships 7.0), oxlint from the template,
+  Prettier (`semi: false`, `tabWidth: 4`, lock file ignored), Vitest 4.1 without globals with
+  jsdom and Testing Library, one test, `npm run check` as the single gate. Forms will use zod
+  through React Hook Form; API responses stay unvalidated at runtime (ADR-008 trade-off).
+  **Next:** plan step 3: first the backend fix (response schemas declare their required
+  properties, export, own commit), then `api:generate` and the typed client.
 - 2026-11-15 – S3·S1 – Sprint 3 opened. Breakdown written (15 sessions in five parts: skeleton
   and generated client, auth in the SPA, file UI with component and browser tests, images with
   compose and Actions, deploy). ADR-008 proposed: openapi-typescript for types plus
