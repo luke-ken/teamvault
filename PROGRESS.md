@@ -2,6 +2,20 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-15 – S3·S1 – Sprint 3 opened. Breakdown written (15 sessions in five parts: skeleton
+  and generated client, auth in the SPA, file UI with component and browser tests, images with
+  compose and Actions, deploy). ADR-008 proposed: openapi-typescript for types plus
+  openapi-fetch as the wrapper, query hooks by hand; the generator's peer range pins TypeScript
+  to 5.9. Plan in `docs/plans/frontend-skeleton-plan.md`: one origin through the Vite proxy
+  from the first day, generated `schema.d.ts` committed with a drift check. A trial run of
+  openapi-generator against the document (2,650 generated lines, a beta warning for OpenAPI
+  3.1) went into the ADR and found a gap on our side: response schemas list no `required`
+  properties, so any generator types response fields as optional; the fix is a backend commit
+  in the plan. ADR-009 proposed: Tailwind CSS 4 plus shadcn/ui over MUI and plain CSS
+  modules. Test tools settled: Vitest for unit and component, Playwright for the browser rung
+  including the two-tab refresh case. The S3-compatible store moves to Sprint 4. The plan now
+  has six steps and five commits.
+  **Next:** Session 2, step 1 of the plan: the Vite skeleton.
 - 2026-11-15 – S2·S11 – Sprint 2 closed. README status line carries the error contract, the OpenAPI
   document and the three-rung suite; everything else of the README pass was already in from the
   sessions that built it. Sprint 2 brought the project from 18 to 82 tests (30 unit, 5 slice, 47
