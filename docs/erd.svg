@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 750" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-  <title>TeamVault ERD: company and app_user joined by membership; file_metadata owned by company and uploaded by app_user</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1150 750" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <title>TeamVault ERD: company and app_user joined by membership; file_metadata owned by company and uploaded by app_user; refresh_token issued to app_user</title>
   <style>
     .box   { fill: none; stroke: #1c232e; stroke-width: 1.4; }
     .sep   { stroke: #1c232e; stroke-width: 1.4; }
@@ -68,6 +68,18 @@
   </g>
   <text class="lbl" x="740" y="578" text-anchor="end">uploads</text>
 
+  <!-- app_user - refresh_token -->
+  <g class="edge">
+    <polyline points="820,124 863,124"/>
+    <line x1="834" y1="118" x2="834" y2="130"/>
+    <line x1="842" y1="118" x2="842" y2="130"/>
+    <circle cx="868" cy="124" r="5"/>
+    <line x1="873" y1="124" x2="890" y2="116"/>
+    <line x1="873" y1="124" x2="890" y2="124"/>
+    <line x1="873" y1="124" x2="890" y2="132"/>
+  </g>
+  <text class="lbl" x="855" y="112" text-anchor="middle">issues</text>
+
   <!-- company -->
   <rect class="box" x="50" y="50" width="230" height="126" rx="3"/>
   <line class="sep" x1="50" y1="80" x2="280" y2="80"/>
@@ -113,4 +125,21 @@
   <text class="col" x="327" y="680">created_at</text><text class="typ" x="450" y="680">timestamptz</text>
   <text class="note" x="315" y="716">UNIQUE (company_id, filename)</text>
   <text class="note" x="315" y="732">INDEX (company_id, created_at)</text>
+
+  <!-- refresh_token -->
+  <rect class="box" x="890" y="50" width="240" height="230" rx="3"/>
+  <line class="sep" x1="890" y1="80" x2="1130" y2="80"/>
+  <text class="title" x="902" y="70">refresh_token</text>
+  <text class="col" x="902" y="96">id</text><text class="typ" x="1040" y="96">uuid</text><text class="tag" x="1118" y="96">PK</text>
+  <text class="col" x="902" y="118">user_id</text><text class="typ" x="1040" y="118">uuid</text><text class="tag" x="1118" y="118">FK</text>
+  <text class="col" x="902" y="140">family_id</text><text class="typ" x="1040" y="140">uuid</text>
+  <text class="col" x="902" y="162">token_hash</text><text class="typ" x="1040" y="162">text</text><text class="tag" x="1118" y="162">UQ</text>
+  <text class="col" x="902" y="184">expires_at</text><text class="typ" x="1040" y="184">timestamptz</text>
+  <text class="col" x="902" y="206">family_expires_at</text><text class="typ" x="1040" y="206">timestamptz</text>
+  <text class="col" x="902" y="228">used_at</text><text class="typ" x="1040" y="228">timestamptz</text>
+  <text class="col" x="902" y="250">revoked_at</text><text class="typ" x="1040" y="250">timestamptz</text>
+  <text class="col" x="902" y="272">created_at</text><text class="typ" x="1040" y="272">timestamptz</text>
+  <text class="note" x="890" y="306">UNIQUE (token_hash)</text>
+  <text class="note" x="890" y="322">INDEX (family_id)</text>
+  <text class="note" x="890" y="338">INDEX (expires_at)</text>
 </svg>

@@ -201,7 +201,12 @@ sequenceDiagram
    the user's UUID as subject, the email as a convenience claim, issued-at and a 15 minute
    expiry. `NimbusJwtEncoder` signs with HMAC-SHA256 using the key from
    `TEAMVAULT_JWT_SECRET`. The client gets the compact token and its expiry and keeps it; the
-   server keeps nothing, which is why there is no logout endpoint.
+   server keeps nothing about the access token. What it does keep, since ADR-007, is the
+   refresh token's hash in a table: the same login response sets it as an httpOnly cookie,
+   `POST /api/auth/refresh` trades it for a new pair, and `POST /api/auth/logout` revokes
+   the family. That path is not drawn here; its trace tables are in
+   [ADR-007](../adr/007-refresh-token-rotation.md) and its tests in
+   `RefreshTokenApiIntegrationTest`.
 6. **Verify without the database (C, arrows 1 to 4).** On every later request the bearer
    filter hands the token to `NimbusJwtDecoder`, built in `JwtConfig` from the same key. It
    checks the signature, the expiry with 60 seconds of clock skew, and the issuer. A valid
@@ -255,8 +260,8 @@ comes from.
   stable key, the email is a label.
 - **The 15 minute TTL, making it a day:** there is no revocation, so a leaked token is
   usable for the whole day. The short TTL is the price of keeping the server stateless;
-  refresh tokens (ADR-007, stretch) are the way to make it short without logging the user
-  out every quarter hour.
+  the refresh token (ADR-007) is what makes it short without logging the user out every
+  quarter hour.
 - **The `toString` overrides:** a debug log of the request records prints the raw password,
   one of the principal prints the hash. Nothing fails, which is why it is easy to miss.
 
@@ -266,4 +271,4 @@ comes from.
 - Why do an unknown email and a wrong password produce the same response, in body and in time?
 - What is in the token, who signs it, and what does the server have to keep to verify it?
 - Why is the subject the user's UUID and not the email?
-- Why is there no logout endpoint, and what is the trade-off?
+- What does logout revoke, and why does the access token in flight still work for a few minutes?

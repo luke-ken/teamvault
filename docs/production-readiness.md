@@ -48,12 +48,13 @@ cheap to run, not what makes them possible.
 | OWASP Top 10:2025 walked against the code | built | Ten findings, six closed in tests and code: the upload limit tripped through a real server, Spring Security's default headers pinned, a hostile filename stored verbatim with the blob under its UUID, filename capped at 255, WARN on failed login and denied access, the generic `IllegalArgumentException` handler removed. Four named on this ladder |
 | Failed logins and denied access leave a WARN line | built | Masked email on login failures, caller UUID on 403s, request id on both; a test asserts the raw email never reaches the log |
 | Breached-password check at registration | named | Range query against the Pwned Passwords API (k-anonymity, five hash characters sent); the first outbound call the project would have, so it waits for the client timeout row |
-| Access token in memory, refresh token rotation in an httpOnly cookie | sprint 3 | ADR-004 revisit trigger 1: a 15-minute token is unusable behind a UI without renewal |
+| Refresh token rotation in an httpOnly cookie, reuse detection | built | ADR-007 (fires ADR-004 revisit trigger 1): opaque token hashed in `refresh_token`, one use per token, a replayed token revokes its family, 14 days idle and 30 days per login, cookie `HttpOnly; Secure; SameSite=Strict; Path=/api/auth`. The access-token-in-memory half is the Sprint 3 frontend line |
+| Expired refresh rows swept nightly | built | `@Scheduled` cron at 03:00 UTC, one bulk JPQL delete by `expires_at`; in-process, no catch-up on a missed night, harmless if two instances run it |
 | Swagger UI off outside the dev profile | built | ADR-006: `/v3/api-docs` public in every profile, the UI only under `dev`, both positions tested |
 | Security headers and TLS termination at the proxy | sprint 3 | nginx in front; TLS at the ingress, never in the container |
 | Container image scanning in CI | sprint 3 | Trivy on the two images |
 | Rate limiting on login and registration | sprint 4 | Redis-backed; bcrypt cost is also the denial-of-service lever |
-| Instant logout, token denylist | sprint 4 | ADR-004 revisit trigger 3 |
+| Instant logout, token denylist | sprint 4 | ADR-004 revisit trigger 3; logout today revokes the refresh family (ADR-007), the access token in flight lives out its minutes |
 | RS256 or an external identity provider | named | ADR-004 revisit trigger 2; Keycloak is the production answer, a self-built refresh flow is the learning answer |
 | Password reset, email verification | named | Needs an email channel the project does not have; until then registration proves no ownership of the address |
 

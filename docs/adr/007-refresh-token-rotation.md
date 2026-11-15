@@ -1,7 +1,7 @@
 # ADR-007: Opaque refresh tokens with rotation and reuse detection
 
 - **Date:** 2026-11-05
-- **Status:** proposed
+- **Status:** accepted (2026-11-15)
 
 ## Context
 ADR-004 issues a 15-minute access token and nothing else; a client logs in again when it

@@ -2,6 +2,23 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-15 – S2·S10 – Refresh token rotation built (ADR-007 accepted, 11.11 to 15.11). Plan
+  first (`docs/plans/refresh-token-plan.md`), three ADR corrections before any code: cookie
+  path `/api/auth` so logout sees it, cleanup as a nightly sweep instead of a login side job,
+  the two-tab replay named as a gap. Then bottom-up in four commits: `V3__refresh_token.sql`
+  with the family cap folded into `expires_at`, `RefreshToken`, locked `findByTokenHash`
+  (`PESSIMISTIC_WRITE`), first JPQL (`deleteExpired`), `Clock` bean, `RefreshTokenService`
+  (32 random bytes base64url, SHA-256 hex unsalted, rotate with three outcomes, revoke the
+  family) with six unit tests on a fixed clock; `AuthTokens`, `AuthService.refresh` and
+  `logout`, `RefreshCookie`, `AuthController` on `ResponseEntity` with `Set-Cookie`,
+  `@CookieValue(required = false)`, `RefreshTokenCleanup` on a cron with
+  `@EnableScheduling`; six API tests in `RefreshTokenApiIntegrationTest` that play the
+  browser by hand (`MockCookie` carried from response to request, an expired row planted via
+  the package-level `hash`). The integration rung caught two bugs the mocks could not:
+  `rotate` without `@Transactional` (the lock needs one), and the reuse 401 rolling its own
+  revocation back (`noRollbackFor`). Docs: ADR-004 trigger 1 fired, README flow and table,
+  ladder rows, ERD table and SVG, walkthrough 3 pointer, `invalid-refresh-token` in the
+  catalogue, `.http` requests. 82 tests. **Next:** Session 11, close the sprint.
 - 2026-11-03 – S2·S8 – OWASP findings closed. Four commits: the upload limit tripped through a
   real server (`RANDOM_PORT`, `RestClient`, a part one byte over 25 MB; MockMvc cannot test it,
   a chunked body made Tomcat drop the connection, a fixed-length body gets the 413 out);

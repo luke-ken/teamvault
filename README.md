@@ -5,7 +5,8 @@ by one colleague is automatically visible to the whole company, and never to any
 outside it. Storage tiers for small vs. large companies.
 
 > **Status:** the backend core is running: tenant-isolated file upload/list/download on a
-> hand-designed PostgreSQL schema, registration and bearer-token auth with self-issued JWTs,
+> hand-designed PostgreSQL schema, registration and bearer-token auth with self-issued JWTs, renewed through rotating
+> refresh tokens in an httpOnly cookie,
 > companies with an ADMIN/MEMBER role model enforced in the service layer, a health endpoint
 > with readiness probes, integration-tested against a real Postgres (Testcontainers), formatter
 > enforced by the build. This repo is built in public; the commit history *is* the
@@ -27,10 +28,13 @@ outside it. Storage tiers for small vs. large companies.
    credentials leave the client exactly once, at login; the token carries identity only
    (`sub` = user id), never permissions. Authorization stays a per-request membership
    lookup in the service layer, so nothing in the token can go stale except the identity,
-   and that window is the 15-minute TTL.
+   and that window is the 15-minute TTL. Renewal without a password is an opaque refresh
+   token in an httpOnly cookie, rotated on every use: a replayed token proves a copy exists
+   and revokes its whole family ([ADR-007](docs/adr/007-refresh-token-rotation.md)).
 
 The API layer is stateless (no server-side session state), so it scales horizontally
-without sticky sessions.
+without sticky sessions. The one exception is the refresh call, which reads and writes a
+table once per 15 minutes per client; every other call is verified by signature alone.
 
 ## Stack
 
@@ -117,10 +121,17 @@ curl -s -X POST localhost:8080/api/companies/$INITECH/members \
   -d '{"email":"bob@globex.example"}'
 curl -s -H "Authorization: Bearer $CAROL" localhost:8080/api/companies/$INITECH/members
 
-# exchange credentials for a token, valid 15 minutes
-TOKEN=$(curl -s -X POST localhost:8080/api/auth/login \
+# exchange credentials for a token, valid 15 minutes; the same response sets the refresh
+# token as an httpOnly cookie (Path=/api/auth), which only a cookie jar sees
+TOKEN=$(curl -s -c jar.txt -X POST localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@acme.example","password":"devpass12"}' | jq -r .token)
+
+# renew without the password: the cookie is rotated, the old one is dead after this call
+TOKEN=$(curl -s -b jar.txt -c jar.txt -X POST localhost:8080/api/auth/refresh | jq -r .token)
+# log out: the token family is revoked and the cookie cleared; a refresh afterwards is a
+# 401 invalid-refresh-token (so is a replayed cookie, which also revokes the family)
+curl -s -b jar.txt -c jar.txt -X POST localhost:8080/api/auth/logout   # 204
 
 # upload a file into Acme
 curl -H "Authorization: Bearer $TOKEN" -F "file=@demo.txt" \
@@ -187,8 +198,11 @@ tests (`@WebMvcTest`) start the web layer only, for the exception handler and th
 Integration tests (`*ApiIntegrationTest`) run the whole application against Postgres through
 MockMvc, sharing one context. One of them, the upload limit, starts a real server on a random
 port instead: MockMvc hands multipart parts over already parsed, so the container's size limit
-never runs under it. All three rungs run in the same `./mvnw test`; a Surefire/Failsafe split
-comes with CI. Test methods are named `method_condition_result`, for example
+never runs under it. The refresh token tests play the browser by hand: MockMvc has no cookie
+jar, so each test carries the `Set-Cookie` of one response into the next request. Those
+tests also caught what the unit rung cannot: a lookup that needs a transaction, and a
+revocation that a thrown 401 would have rolled back. All three rungs run in the same
+`./mvnw test`; a Surefire/Failsafe split comes with CI. Test methods are named `method_condition_result`, for example
 `add_alreadyMember_conflict_nothingSaved`, so a red line in the report reads as a sentence.
 
 ## API
@@ -202,7 +216,9 @@ Details shape on every error response. The table is the human summary of it.
 | GET | `/api/ping` | public | smoke check |
 | GET | `/actuator/health`, `/actuator/health/{liveness,readiness}` | public | UP or DOWN, no component details |
 | POST | `/api/auth/register` | public | `{email, password, displayName}` in, `{id, email, displayName}` out, 409 on a known email |
-| POST | `/api/auth/login` | public | `{email, password}` in, `{token, expiresAt}` out |
+| POST | `/api/auth/login` | public | `{email, password}` in, `{token, expiresAt}` out, refresh token set as an httpOnly cookie |
+| POST | `/api/auth/refresh` | cookie `refresh_token` | rotates the refresh token (new cookie), `{token, expiresAt}` out; 401 `invalid-refresh-token` when the cookie is missing, used, expired or revoked |
+| POST | `/api/auth/logout` | cookie `refresh_token` | revokes the token family and clears the cookie; 204 also without a cookie |
 | GET | `/api/me` | bearer | the caller as `{id, email, displayName}`, from the token subject |
 | POST | `/api/companies` | bearer | `{name, tier}` in, the caller becomes ADMIN in the same transaction |
 | GET | `/api/companies` | bearer | the caller's companies with the caller's role in each |
@@ -218,7 +234,8 @@ Errors are Problem Details (RFC 9457, `application/problem+json`), never stack t
 both paths a request can fail: in the filter chain (401, missing or invalid token; the
 security entry point hands the exception to the MVC resolver, so the same advice writes
 every error body) and in the controllers (400 validation with an `errors` list of
-`{field, message}`, 400 malformed body, 401 bad credentials, 403, 404, 409 including the
+`{field, message}`, 400 malformed body, 401 bad credentials or an unusable refresh cookie,
+403, 404, 409 including the
 unique-constraint race behind the exists check). `type` is an anchor into the error
 catalogue, [docs/errors.md](docs/errors.md), which clients switch on; `detail` is for
 humans and may change. Every response, success included, carries `X-Request-Id` (a
@@ -240,10 +257,13 @@ Knowing what NOT to build at this scale is part of the design:
 - **CQRS split, event-synced read replicas, multi-region**: same reasoning.
 - **Distributed caching + invalidation broadcast**: no read-path bottleneck exists to
   justify it; if caching enters, invalidation is the problem to design first.
-- **Refresh tokens and token revocation**: a 15-minute access token without refresh keeps
-  the server stateless; the client logs in again. The triggers that would change this
-  (a second service verifying tokens, an external identity provider) are written down in
-  [ADR-004](docs/adr/004-self-issued-jwt-auth.md).
+- **Instant logout, a token denylist**: logout revokes the refresh token family, so no new
+  access token can be obtained, but the access token in flight works for its remaining
+  minutes (at most 15). Closing that gap needs a lookup on every request (a Redis denylist,
+  Sprint 4); until then the short TTL is the answer ([ADR-007](docs/adr/007-refresh-token-rotation.md)).
+  The same ADR names the two-tab gap: two tabs that refresh with the same cookie in the same
+  instant look like a replay to the server, and the family dies. The frontend dedupes
+  refreshes across tabs in Sprint 3; a server-side leeway window is the fallback.
 - **Role changes, member removal, company update and delete**: the read and create
   paths exist; the destructive ones wait for the audit trail in Sprint 4, so nothing
   disappears without a record of who did it.

@@ -139,6 +139,17 @@ flips to accepted when the build lands.
 ## Build order
 
 ### Commit 1: `feat: refresh token rotation with reuse detection, httpOnly cookie, logout`
+
+As built (2026-11-11 to 15): split into three commits at the seams that left the tree green,
+steps 1 to 4 (table, properties, rotation service with its unit tests), steps 5 and 6 (login
+sets the cookie, refresh and logout endpoints, sweep), steps 7 and 8 (API tests, catalogue,
+`.http`). The six integration tests went into their own `RefreshTokenApiIntegrationTest`
+instead of the already long `AuthApiIntegrationTest`. The integration rung found two bugs the
+unit rung could not: `rotate` had no `@Transactional`, so the locked lookup failed with no
+transaction live, and the reuse path's 401 rolled its own revocation back, fixed with
+`noRollbackFor`. 82 tests (67 plus 15: one more unit test than planned, `AuthServiceTest`
+also covers `refresh`).
+
 1. `V3__refresh_token.sql`; `auth/RefreshToken` entity; `auth/RefreshTokenRepository` with the
    locked `findByTokenHash`, `findByFamilyIdAndUsedAtIsNullAndRevokedAtIsNull`, the JPQL delete.
    Flyway and `ddl-auto: validate` check the mapping on the first full test.

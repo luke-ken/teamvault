@@ -138,6 +138,7 @@ Revisit triggers, in the order they are likely to arrive:
 1. **The React frontend lands (Sprint 3).** A 15-minute login is unacceptable in a UI, so
    a refresh token becomes necessary: either built here (rotation, reuse detection) or
    bought by switching to Keycloak, which also brings the login page the frontend needs.
+   Fired early, in Sprint 2: built here, [ADR-007](007-refresh-token-rotation.md).
 2. **A second service needs to verify tokens.** HS256 would force it to hold the secret
    and therefore to be able to forge; switch to RS256 or to an IdP.
 3. **Instant logout becomes a requirement.** A token denylist in Redis (planned for
