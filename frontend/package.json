@@ -1,0 +1,36 @@
+{
+    "name": "teamvault-frontend",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "lint": "oxlint",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "check": "npm run format:check && npm run lint && tsc -b && npm run test"
+    },
+    "dependencies": {
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1"
+    },
+    "devDependencies": {
+        "@testing-library/jest-dom": "^7.0.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.10",
+        "@types/node": "^24.19.2",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.1.2",
+        "jsdom": "^31.0.1",
+        "oxlint": "^1.90.0",
+        "prettier": "^3.10.1",
+        "typescript": "~5.9.3",
+        "vite": "^8.3.6",
+        "vitest": "^4.1.12"
+    }
+}

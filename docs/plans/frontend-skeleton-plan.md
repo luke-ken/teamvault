@@ -8,7 +8,12 @@ this file is the build order. Method as in
 the backend plans: inventory, forks settled before the first line, bottom-up, a test with each
 step.
 
-**Status:** planned 2026-11-15. Nothing built yet.
+**Status:** planned 2026-11-15. Steps 1 and 2 built the same day (the skeleton commit); next
+is step 3, the generated client. As built: create-vite 9.3 scaffolds with oxlint already
+configured and TypeScript 7.0, pinned down to 5.9.3. Prettier runs with `semi: false` and
+`tabWidth: 4`, quotes and trailing commas on its defaults; `package-lock.json` is in
+`.prettierignore` because npm rewrites it with its own indent. Vitest 4.1 without globals:
+`test` and `expect` are imported, and the setup file registers Testing Library's cleanup.
 
 ## Inventory
 
