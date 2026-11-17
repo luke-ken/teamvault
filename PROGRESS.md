@@ -2,6 +2,19 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-17 – S3·S2 (client) – Plan steps 3 and 4 built, two commits. Backend fix first:
+  one customizer marks every property of the `*Response` schemas as required, `ProblemDetail`
+  declares `status` and `title`; a test pins the naming rule (every schema is a `*Request`, a
+  `*Response` or `ProblemDetail`). 83 backend tests, document exported again. Then the client:
+  `npm run api:generate` writes `src/api/schema.d.ts`, `src/api/client.ts` creates the
+  openapi-fetch client, Vite proxies `/api` to `:8080`, `App` shows the ping answer through a
+  plain effect (TanStack Query replaces it in Session 3). As built: base URL is
+  `window.location.origin` because Node's `Request` rejects relative URLs in the tests; the
+  late `fetch` lookup is needed for stubbing. 4 frontend tests, `npm run check` green, live
+  check on `:5173` done. Known and left alone: one dev-only audit finding (`picomatch` under
+  Vite and Vitest, no patched version yet; `npm audit --omit=dev` is clean). Upload comes out
+  as `requestBody?` with `file: string` in the generated types, a Session 7 topic.
+  **Next:** plan step 5: Tailwind 4, the `@/` alias, shadcn/ui init, `button`, the ping card.
 - 2026-11-15 – S3·S2 (first half) – Frontend skeleton committed: create-vite 9.3 template
   trimmed, TypeScript pinned to 5.9.3 (the template ships 7.0), oxlint from the template,
   Prettier (`semi: false`, `tabWidth: 4`, lock file ignored), Vitest 4.1 without globals with
