@@ -489,6 +489,12 @@ components:
           enum:
           - SMALL
           - LARGE
+      required:
+      - createdAt
+      - id
+      - name
+      - role
+      - tier
     CreateCompanyRequest:
       type: object
       properties:
@@ -522,6 +528,13 @@ components:
           format: int64
         uploadedBy:
           type: string
+      required:
+      - contentType
+      - createdAt
+      - filename
+      - id
+      - sizeBytes
+      - uploadedBy
     LoginRequest:
       type: object
       properties:
@@ -553,11 +566,19 @@ components:
         userId:
           type: string
           format: uuid
+      required:
+      - displayName
+      - email
+      - role
+      - since
+      - userId
     PingResponse:
       type: object
       properties:
         message:
           type: string
+      required:
+      - message
     ProblemDetail:
       type: object
       properties:
@@ -589,6 +610,9 @@ components:
           type: string
           format: uri
           description: Anchor into docs/errors.md; absent means about:blank
+      required:
+      - status
+      - title
     RegisterRequest:
       type: object
       properties:
@@ -617,6 +641,9 @@ components:
           format: date-time
         token:
           type: string
+      required:
+      - expiresAt
+      - token
     UserResponse:
       type: object
       properties:
@@ -627,6 +654,10 @@ components:
         id:
           type: string
           format: uuid
+      required:
+      - displayName
+      - email
+      - id
   securitySchemes:
     bearer:
       bearerFormat: JWT

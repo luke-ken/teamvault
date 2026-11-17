@@ -76,6 +76,20 @@ public class OpenApiConfig {
 		};
 	}
 
+	@Bean
+	OpenApiCustomizer responseFieldsAreRequired() {
+		return openApi -> {
+			if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
+				return;
+			}
+			openApi.getComponents().getSchemas().forEach((name, schema) -> {
+				if (name.endsWith("Response")) {
+					requireAllProperties(schema);
+				}
+			});
+		};
+	}
+
 	// null means "inherits the global requirement"; an empty list is the explicit
 	// opt-out.
 	private static boolean secured(Operation operation) {
@@ -85,7 +99,7 @@ public class OpenApiConfig {
 	private static Schema<?> problemSchema() {
 		Schema<?> violation = new ObjectSchema().addProperty("field", new StringSchema())
 			.addProperty("message", new StringSchema());
-		return new ObjectSchema()
+		Schema<?> problem = new ObjectSchema()
 			.addProperty("type",
 					new StringSchema().format("uri")
 						.description("Anchor into docs/errors.md; absent means about:blank"))
@@ -95,12 +109,22 @@ public class OpenApiConfig {
 			.addProperty("instance", new StringSchema().description("Request path"))
 			.addProperty("requestId", new StringSchema().description("Same value as the X-Request-Id header"))
 			.addProperty("errors", new ArraySchema().items(violation).description("validation-failed only"));
+
+		// The two members every problem carries; the rest depends on the error.
+		problem.setRequired(List.of("status", "title"));
+		return problem;
 	}
 
 	private static ApiResponse problemResponse(String description) {
 		return new ApiResponse().description(description)
 			.content(new Content().addMediaType(PROBLEM_JSON,
 					new MediaType().schema(new Schema<>().$ref("#/components/schemas/" + PROBLEM))));
+	}
+
+	private static void requireAllProperties(Schema<?> schema) {
+		if (schema.getProperties() != null) {
+			schema.setRequired(schema.getProperties().keySet().stream().sorted().toList());
+		}
 	}
 
 }

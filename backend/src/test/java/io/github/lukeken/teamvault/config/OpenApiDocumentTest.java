@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +60,28 @@ public class OpenApiDocumentTest extends AbstractIntegrationTest {
 			.andExpect(jsonPath("$.components.schemas.ProblemDetail.properties.requestId").exists())
 			.andExpect(jsonPath("$.components.schemas.ProblemDetail.properties.errors.type", is("array")))
 			.andExpect(jsonPath("$.components.schemas.ProblemDetail.properties.type.format", is("uri")));
+	}
+
+	@Test
+	void responseSchemas_declareEveryPropertyRequired() throws Exception {
+		String body = mvc.perform(get("/v3/api-docs")).andReturn().getResponse().getContentAsString();
+		Map<String, Map<String, Object>> schemas = JsonPath.read(body, "$.components.schemas");
+
+		assertThat(schemas.keySet()).filteredOn(name -> name.endsWith("Response")).hasSizeGreaterThanOrEqualTo(6);
+		assertThat(schemas.keySet())
+			.allMatch(name -> name.endsWith("Response") || name.endsWith("Request") || name.equals("ProblemDetail"));
+
+		schemas.forEach((name, schema) -> {
+			if (name.endsWith("Response")) {
+				Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+				assertThat((List<String>) schema.get("required")).as(name)
+					.containsExactlyInAnyOrderElementsOf(properties.keySet());
+			}
+		});
+		// Request schemas keep what their constraints say: role is optional here.
+		mvc.perform(get("/v3/api-docs"))
+			.andExpect(jsonPath("$.components.schemas.AddMemberRequest.required", hasSize(1)))
+			.andExpect(jsonPath("$.components.schemas.ProblemDetail.required", hasSize(2)));
 	}
 
 	@Test
