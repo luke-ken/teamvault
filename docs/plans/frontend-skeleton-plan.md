@@ -14,6 +14,17 @@ configured and TypeScript 7.0, pinned down to 5.9.3. Prettier runs with `semi: f
 `tabWidth: 4`, quotes and trailing commas on its defaults; `package-lock.json` is in
 `.prettierignore` because npm rewrites it with its own indent. Vitest 4.1 without globals:
 `test` and `expect` are imported, and the setup file registers Testing Library's cleanup.
+Step 3's backend fix, decided 2026-11-17 with the output on screen: one customizer for every
+schema whose name ends in `Response` (all properties required), not an annotation per field.
+Six records and about twenty fields would carry the same annotation, and a new record would
+forget it silently; the convention is guarded by a test instead. `ProblemDetail` declares
+`status` and `title` as required, the members every error carries. The test also pins the
+naming rule: every schema is a `*Request`, a `*Response` or `ProblemDetail`.
+Step 4 as built: the client's base URL is `window.location.origin`, not empty. openapi-fetch
+builds a `Request`, and Node's `Request` (which the tests run on) rejects a relative URL;
+the origin is still the page's own, so fork 2 holds. Fork 6 verified: without the late
+`fetch` lookup the two tests that stub `fetch` fail, because the client keeps the global it
+saw at creation.
 
 ## Inventory
 
