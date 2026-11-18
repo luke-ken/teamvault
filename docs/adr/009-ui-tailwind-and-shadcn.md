@@ -1,7 +1,7 @@
 # ADR-009: UI built on Tailwind CSS and shadcn/ui components
 
 - **Date:** 2026-11-15
-- **Status:** proposed
+- **Status:** accepted (2026-11-18)
 
 ## Context
 The frontend needs a small set of UI parts: two forms, a file list, a dialog, buttons, a

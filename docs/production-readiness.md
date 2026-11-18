@@ -81,7 +81,7 @@ cheap to run, not what makes them possible.
 | Problem Details (RFC 9457) instead of the custom error record | built | ADR-005; `type` is an anchor into `docs/errors.md`, the advice extends `ResponseEntityExceptionHandler` |
 | Request id in the error body and in the log line | built | `RequestIdFilter` ahead of the security chain, `X-Request-Id` on every response, `requestId` in every problem body |
 | OpenAPI document generated from the controllers | built | springdoc 3.x, bearer scheme global, Problem Details on every error response, exported to `docs/openapi.yaml` by the test suite |
-| Frontend client generated from the OpenAPI document | sprint 3 | Hand-mirrored schemas drift at runtime, generated types drift at build time |
+| Frontend client generated from the OpenAPI document | built | ADR-008: openapi-typescript writes `frontend/src/api/schema.d.ts` from `docs/openapi.yaml`, openapi-fetch calls through it. Response schemas declare their required properties, so fields are not typed optional. The drift check (`api:generate`, then a clean diff) joins CI with the first workflow |
 | API versioning | named | Path or media type; one client today, no version needed |
 
 ## Resilience
@@ -113,7 +113,7 @@ cheap to run, not what makes them possible.
 | Demo cost controls | sprint 3 | Seed logins shown on the login page, nightly reset to the seed, a small demo quota, rate limit on registration, a budget alarm; no invite code, a reviewer gives the demo two minutes |
 | Unit tests under the integration suite | built | Mockito, no context: guard and the three services, decision logic proven without Postgres; README names the three rungs |
 | Deployment with a public URL and TLS | sprint 3 | |
-| Formatter enforced by the build | built (backend) | Spring Java Format at the validate phase; Prettier and a linter on the frontend from its first commit in Sprint 3 |
+| Formatter enforced by the build | built (backend), one script (frontend) | Spring Java Format at the validate phase. Frontend: Prettier and oxlint from the first commit, run by `npm run check` together with the type check and the tests; CI calls that script in Sprint 3 |
 | Walkthroughs: a request, the error exits, credentials, startup, upload | built | `docs/walkthroughs/`, one page per path with lanes for our code, Spring and infrastructure; what breaks if a piece is removed |
 
 ## Scale

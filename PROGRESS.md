@@ -2,6 +2,13 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-18 – S3·S2 (styling, docs) – Plan steps 5 and 6, Session 2 complete. Tailwind CSS
+  4 through the Vite plugin, the `@/` alias, shadcn/ui with Radix primitives and the Nova
+  preset, `button` as the first component, the ping card with a "Ping again" button and a
+  fifth test. The CLI's `shadcn` package sits in the dev dependencies (its stylesheet is
+  resolved at build time), so the production audit stays clean. Class sorting through
+  Prettier. Docs: ADR-008 and ADR-009 accepted, the frontend half in the README, two ladder
+  rows updated. **Next:** Session 3 (theory): TanStack Query and the Tailwind primer.
 - 2026-11-17 – S3·S2 (client) – Plan steps 3 and 4 built, two commits. Backend fix first:
   one customizer marks every property of the `*Response` schemas as required, `ProblemDetail`
   declares `status` and `title`; a test pins the naming rule (every schema is a `*Request`, a

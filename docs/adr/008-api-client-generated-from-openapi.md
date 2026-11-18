@@ -1,7 +1,7 @@
 # ADR-008: Frontend API client as generated types plus a thin fetch wrapper
 
 - **Date:** 2026-11-15
-- **Status:** proposed
+- **Status:** accepted (2026-11-18)
 
 ## Context
 The React frontend starts in Sprint 3. ADR-006 committed the API contract as
