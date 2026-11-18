@@ -26,6 +26,14 @@ builds a `Request`, and Node's `Request` (which the tests run on) rejects a rela
 the origin is still the page's own, so fork 2 holds. Fork 6 verified: without the late
 `fetch` lookup the two tests that stub `fetch` fail, because the client keeps the global it
 saw at creation.
+Step 5 as built (shadcn CLI 4.23, 2026-11-18): `init -b radix -p nova`, so Radix primitives
+and the Nova preset (neutral base colour, Lucide icons, Geist as a self-hosted font). Fork 8
+needs one correction: the CLI now adds `shadcn` as a package, because `index.css` imports
+`shadcn/tailwind.css`. It is moved to the dev dependencies (the import is resolved at build
+time), which keeps `npm audit --omit=dev` clean; `shadcn eject` would inline about 640 lines
+of utilities instead. `cn` comes from shadcn's own `cn` package, not from clsx plus
+tailwind-merge. oxlint's fast-refresh rule is off for `src/components/ui/`, where a component
+file also exports its variants.
 
 ## Inventory
 

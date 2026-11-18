@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { afterEach, expect, test, vi } from "vitest"
 import App from "./App.tsx"
+import userEvent from "@testing-library/user-event"
 
 const stubFetch = (status: number, contentType: string, body: unknown) => {
     vi.stubGlobal(
@@ -64,4 +65,16 @@ test("shows a fallback when the backend cannot be reached", async () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
         "Backend call failed: Backend not reachable",
     )
+})
+
+test("asks the backend again when the button is pressed", async () => {
+    stubFetch(200, "application/json", { message: "pong" })
+    const user = userEvent.setup()
+
+    render(<App />)
+    await screen.findByText("Backend says: pong")
+    await user.click(screen.getByRole("button", { name: "Ping again" }))
+
+    expect(await screen.findByText("Backend says: pong")).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(2)
 })
