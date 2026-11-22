@@ -1,42 +1,9 @@
-import { useEffect, useState } from "react"
-import { api } from "./api/client.ts"
 import { Button } from "@/components/ui/button.tsx"
-
-type Ping =
-    | { state: "waiting" }
-    | { state: "answer"; message: string }
-    | { state: "failure"; reason: string }
+import { usePing } from "@/features/ping/queries.ts"
+import { ApiError } from "@/api/errors.ts"
 
 function App() {
-    const [ping, setPing] = useState<Ping>({ state: "waiting" })
-    const [attempt, setAttempt] = useState(0)
-
-    // A plain effect on purpose, for one commit: TanStack Query replaces it next.
-    useEffect(() => {
-        let ignore = false
-        api.GET("/api/ping")
-            .then(({ data, error }) => {
-                if (ignore) return
-                setPing(
-                    data
-                        ? { state: "answer", message: data.message }
-                        : { state: "failure", reason: error.title },
-                )
-            })
-            .catch(() => {
-                if (ignore) return
-                setPing({ state: "failure", reason: "Backend not reachable" })
-            })
-
-        return () => {
-            ignore = true
-        }
-    }, [attempt])
-
-    const pingAgain = () => {
-        setPing({ state: "waiting" })
-        setAttempt((current) => current + 1)
-    }
+    const ping = usePing()
 
     return (
         <main className="flex min-h-svh items-center justify-center p-4">
@@ -46,20 +13,21 @@ function App() {
                     File sharing for teams. The frontend starts here.
                 </p>
                 <div className="mt-6 min-h-6 text-sm">
-                    {ping.state === "waiting" && <p>Asking the backend...</p>}
-                    {ping.state === "answer" && (
-                        <p>Backend says: {ping.message}</p>
-                    )}
-                    {ping.state === "failure" && (
+                    {ping.isPending && <p>Asking the backend...</p>}
+                    {ping.isSuccess && <p>Backend says: {ping.data.message}</p>}
+                    {ping.isError && (
                         <p role="alert" className="text-destructive">
-                            Backend call failed: {ping.reason}
+                            Backend call failed:{" "}
+                            {ping.error instanceof ApiError
+                                ? ping.error.problem.title
+                                : "Backend not reachable"}
                         </p>
                     )}
                 </div>
                 <Button
                     className="mt-4"
-                    onClick={pingAgain}
-                    disabled={ping.state === "waiting"}
+                    onClick={() => ping.refetch()}
+                    disabled={ping.isFetching}
                 >
                     Ping again
                 </Button>
