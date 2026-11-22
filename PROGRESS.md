@@ -2,6 +2,18 @@
 
 Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
 
+- 2026-11-22 – S3·S3 (theory) – TanStack Query and a Tailwind primer, one commit. The ping
+  now runs through `useQuery` (`src/features/ping/queries.ts`); the hand-written effect and
+  its `ignore` flag are gone, and StrictMode's double mount is one request because both
+  mounts share one cache entry. `createQueryClient()` sets the defaults once: `staleTime` of
+  30 s (own writes stay correct through invalidation) and a retry rule that never repeats a
+  4xx. `ApiError` wraps the Problem Details body, because openapi-fetch returns errors and a
+  query only fails when its function throws. Tests render through `renderWithQueryClient`
+  (fresh cache per test, no retries). 8 frontend tests. Decided for Session 7: the key tree
+  (`["companies"]`, `["companies", id]`, `["companies", id, "files" | "members"]`) and which
+  mutation invalidates which subtree. Tailwind: components that take a `className` pass it
+  through `cn` with the caller's value last; theme changes happen in `src/index.css` only.
+  **Next:** Session 4 (theory): tokens in the browser, then the SPA auth build.
 - 2026-11-18 – S3·S2 (styling, docs) – Plan steps 5 and 6, Session 2 complete. Tailwind CSS
   4 through the Vite plugin, the `@/` alias, shadcn/ui with Radix primitives and the Nova
   preset, `button` as the first component, the ping card with a "Ping again" button and a
