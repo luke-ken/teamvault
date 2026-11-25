@@ -8,7 +8,7 @@ Newest on top. Format: `YYYY-MM-DD – sprint/session – done / next`.
   mounts share one cache entry. `createQueryClient()` sets the defaults once: `staleTime` of
   30 s (own writes stay correct through invalidation) and a retry rule that never repeats a
   4xx. `ApiError` wraps the Problem Details body, because openapi-fetch returns errors and a
-  query only fails when its function throws. Tests render through `renderWithQueryClient`
+  query only fails when its function throws. Tests render through `renderApp`
   (fresh cache per test, no retries). 8 frontend tests. Decided for Session 7: the key tree
   (`["companies"]`, `["companies", id]`, `["companies", id, "files" | "members"]`) and which
   mutation invalidates which subtree. Tailwind: components that take a `className` pass it

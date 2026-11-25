@@ -7,7 +7,14 @@ trade-offs in `../adr/007-refresh-token-rotation.md` and
 the other plans: inventory, forks settled before the first line, bottom-up, a test with each
 step.
 
-**Status:** accepted 2026-11-22, step 1 in progress.
+**Status:** accepted 2026-11-22. Steps 1 and 2 committed 2026-11-25. As built: msw 2.15 (see
+the inventory), the session has a fourth status `unreachable`, and a call sent without a
+token is neither cloned nor retried. Step 3 as built: react-router 8.5 in declarative mode
+needed no change to this plan; the two guards are `RequireSession` and `AnonymousOnly`, and
+the cache rule of fork 6 is one function, `clearCacheWithoutSession`, shared by `main.tsx`
+and the test helper. Found on the way: `strict` was off in both tsconfig files (the
+template relies on the TypeScript 6 default, this project pins 5.9), noticed through a
+missing null check on the router's location state. It is on now; the code needed no change.
 
 ## Inventory
 
@@ -26,7 +33,7 @@ step.
 - Server rule the frontend must respect: a refresh token works once. A second use revokes
   the family. The server cannot tell an attacker from a careless client.
 - Frontend today: `src/api/client.ts` (openapi-fetch, no middleware), `ApiError`,
-  `createQueryClient()` (30 s `staleTime`, no retry on a 4xx), `renderWithQueryClient`, the
+  `createQueryClient()` (30 s `staleTime`, no retry on a 4xx), `renderApp`, the
   ping card as the only screen, tests that stub `fetch` by hand. No router, no forms.
 - openapi-fetch 0.17 middleware: `onRequest({ request, schemaPath, id })`,
   `onResponse({ request, response, schemaPath, id })`, `onError`. `onResponse` may return a
