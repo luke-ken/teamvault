@@ -4,6 +4,10 @@ import "./index.css"
 import App from "./App.tsx"
 import { createQueryClient } from "@/api/queryClient.ts"
 import { QueryClientProvider } from "@tanstack/react-query"
+import { api } from "@/api/client.ts"
+import { authMiddleware } from "@/auth/authMiddleware.ts"
+
+api.use(authMiddleware)
 
 const queryClient = createQueryClient()
 
